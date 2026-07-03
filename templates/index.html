@@ -24,19 +24,6 @@ window.MathJax = {
 </script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" async></script>
 
-<!-- MathJax: LaTeX ko sundar math mein convert karta hai -->
-<script>
-window.MathJax = {
-    tex: {
-        inlineMath: [['$','$'],['\\(','\\)']],
-        displayMath: [['$$','$$'],['\\[','\\]']],
-        processEscapes: true
-    },
-    options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
-};
-</script>
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -172,10 +159,41 @@ border-radius:8px;
 background:rgba(255,255,255,0.05);
 font-size:14px;
 cursor:pointer;
+display:flex;
+justify-content:space-between;
+align-items:center;
 }
 
 .history-item:hover{
 background:rgba(255,255,255,0.1);
+}
+
+.history-item.active{
+background:rgba(56,189,248,0.15);
+border:1px solid rgba(56,189,248,0.3);
+}
+
+.history-item .session-title{
+flex:1;
+overflow:hidden;
+text-overflow:ellipsis;
+white-space:nowrap;
+}
+
+.history-item .delete-session-btn{
+background:none;
+border:none;
+color:#64748b;
+cursor:pointer;
+font-size:14px;
+padding:2px 6px;
+border-radius:4px;
+margin-left:6px;
+}
+
+.history-item .delete-session-btn:hover{
+color:#ef4444;
+background:rgba(239,68,68,0.1);
 }
 
 .main-chat-container{
@@ -421,7 +439,7 @@ padding-bottom:100px;
 
 .sidebar.active{left:0;}
 
-/* ✅ FIX: Mobile input always visible */
+/* FIX: Mobile input always visible */
 .main-chat-container{
 width:100%;
 height:100dvh;
@@ -443,7 +461,7 @@ padding-bottom:10px;
 .welcome-screen h1{font-size:34px;}
 .welcome-screen p{font-size:16px;}
 
-/* ✅ FIX: Input box fixed at bottom */
+/* FIX: Input box fixed at bottom */
 .input-area-wrapper{
 padding:10px;
 padding-bottom:env(safe-area-inset-bottom, 10px);
@@ -591,6 +609,7 @@ object-fit:contain;background:black;
 }
 
 </style>
+<base target="_blank">
 </head>
 
 <script>
@@ -599,7 +618,10 @@ window.handleKeyPress = function(event){
 }
 
 window.createNewChat = async function(){
-    try{ await fetch("/new_session", {method:"POST"}); }catch(e){}
+    try{ 
+        await fetch("/new_session", {method:"POST"}); 
+        loadSessions(); // Reload sidebar
+    }catch(e){}
     document.getElementById("chatContent").innerHTML = `
     <div class="welcome-screen" id="welcomeScreen">
         <h1>Hello!<br>I am paswan.ai</h1>
@@ -619,7 +641,10 @@ window.deleteChats = async function(){
 window.searchChats = function(){
     const input = document.getElementById("chatSearch").value.toLowerCase();
     document.querySelectorAll(".history-item").forEach(item=>{
-        item.style.display = item.innerText.toLowerCase().includes(input) ? "block" : "none";
+        const title = item.querySelector(".session-title");
+        if(title){
+            item.style.display = title.innerText.toLowerCase().includes(input) ? "flex" : "none";
+        }
     });
 }
 
@@ -784,7 +809,9 @@ window.addEventListener("load", ()=>{
 
     document.body.style.backgroundImage =
         `url('https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1920&q=80')`;
-    loadChats();
+
+    // Load sessions instead of just history
+    loadSessions();
 });
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -813,7 +840,8 @@ let uploadedImageBase64 = null;
 let ttsPlaying = null;
 let isRecording = false;
 let recognition = null;
-let isSending = false; // ✅ FIX: prevent double send
+let isSending = false;
+let currentSessionId = null;
 
 // =========================
 // LOGIN / LOGOUT
@@ -850,46 +878,156 @@ async function saveChatToFirebase(message, reply){
 }
 
 // =========================
-// LOAD HISTORY — ✅ FIX BUG 9: debounce so no flicker
+// SESSIONS — Chat Groups
 // =========================
-let loadChatsTimer = null;
-async function loadChats(){
-    clearTimeout(loadChatsTimer);
-    loadChatsTimer = setTimeout(async ()=>{
-        try{
-            const response = await fetch("/history");
-            const data = await response.json();
-            const historyList = document.getElementById("history-list");
-            historyList.innerHTML = "";
+async function loadSessions(){
+    try{
+        const response = await fetch("/sessions");
+        const sessions = await response.json();
+        const list = document.getElementById("history-list");
+        list.innerHTML = "";
 
-            data.forEach(chat => {
-                const div = document.createElement("div");
-                div.className = "history-item";
-                div.innerText = "💬 " + chat.message.substring(0, 40);
-                div.onclick = function(){
-                    hideWelcomeScreen();
+        if(sessions.length === 0){
+            list.innerHTML = '<p style="color:#64748b;font-size:13px;padding:10px;">No chats yet. Start a new conversation!</p>';
+            return;
+        }
+
+        sessions.forEach(s => {
+            const div = document.createElement("div");
+            div.className = "history-item" + (s.current ? " active" : "");
+            div.dataset.sessionId = s.session_id;
+
+            const titleSpan = document.createElement("span");
+            titleSpan.className = "session-title";
+            titleSpan.innerText = "💬 " + (s.title || "New Chat");
+
+            const delBtn = document.createElement("button");
+            delBtn.className = "delete-session-btn";
+            delBtn.innerHTML = "🗑";
+            delBtn.title = "Delete this chat";
+            delBtn.onclick = async (e) => {
+                e.stopPropagation();
+                if(!confirm("Delete this chat?")) return;
+                await fetch(`/sessions/${s.session_id}`, {method: "DELETE"});
+                loadSessions();
+                if(s.current){
                     document.getElementById("chatContent").innerHTML = `
-                    <div class="message user">
-                        <div class="sender-title">You</div>
-                        <div class="bubble">${escapeHtml(chat.message)}</div>
-                    </div>
-                    <div class="message ai">
-                        <div class="sender-title">paswan.ai</div>
-                        <div class="bubble">${marked.parse(chat.reply)}</div>
+                    <div class="welcome-screen" id="welcomeScreen">
+                        <h1>Hello!<br>I am paswan.ai</h1>
+                        <p>How can I help you today?</p>
                     </div>`;
-                    addCopyButtons();
-                };
-                historyList.appendChild(div);
-            });
-        }catch(error){ console.log(error); }
-    }, 500); // wait 500ms before reloading
+                }
+            };
+
+            div.appendChild(titleSpan);
+            div.appendChild(delBtn);
+
+            div.onclick = async () => {
+                await switchToSession(s.session_id);
+            };
+
+            list.appendChild(div);
+        });
+    }catch(error){ 
+        console.log("Load sessions error:", error);
+        // Fallback to old history
+        loadHistoryFallback();
+    }
+}
+
+async function switchToSession(sessionId){
+    try{
+        await fetch("/switch_session", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({session_id: sessionId})
+        });
+        currentSessionId = sessionId;
+        await loadSessionMessages(sessionId);
+        loadSessions(); // Refresh to show active
+    }catch(e){ console.log(e); }
+}
+
+async function loadSessionMessages(sessionId){
+    try{
+        const resp = await fetch(`/session_history/${sessionId}`);
+        const data = await resp.json();
+        const chatContent = document.getElementById("chatContent");
+        chatContent.innerHTML = "";
+
+        if(data.length === 0){
+            chatContent.innerHTML = `
+            <div class="welcome-screen" id="welcomeScreen">
+                <h1>Hello!<br>I am paswan.ai</h1>
+                <p>How can I help you today?</p>
+            </div>`;
+            return;
+        }
+
+        data.forEach(msg => {
+            // User message
+            const userDiv = document.createElement("div");
+            userDiv.className = "message user";
+            userDiv.innerHTML = `
+                <div class="sender-title">You</div>
+                <div class="bubble">${escapeHtml(msg.user_message || "")}</div>
+            `;
+            chatContent.appendChild(userDiv);
+
+            // AI reply
+            const aiDiv = document.createElement("div");
+            aiDiv.className = "message ai";
+            aiDiv.innerHTML = `
+                <div class="sender-title">paswan.ai</div>
+                <div class="bubble">${marked.parse(msg.ai_reply || "")}</div>
+            `;
+            chatContent.appendChild(aiDiv);
+        });
+
+        addCopyButtons();
+        scrollChatToBottom();
+
+        // Math render
+        if(window.MathJax){
+            MathJax.typesetPromise([chatContent]).catch(()=>{});
+        }
+    }catch(e){ console.log(e); }
+}
+
+// Fallback for old history API
+async function loadHistoryFallback(){
+    try{
+        const response = await fetch("/history");
+        const data = await response.json();
+        const list = document.getElementById("history-list");
+        list.innerHTML = "";
+
+        data.forEach(chat => {
+            const div = document.createElement("div");
+            div.className = "history-item";
+            div.innerHTML = `<span class="session-title">💬 ${escapeHtml(chat.message.substring(0, 40))}</span>`;
+            div.onclick = function(){
+                hideWelcomeScreen();
+                document.getElementById("chatContent").innerHTML = `
+                <div class="message user">
+                    <div class="sender-title">You</div>
+                    <div class="bubble">${escapeHtml(chat.message)}</div>
+                </div>
+                <div class="message ai">
+                    <div class="sender-title">paswan.ai</div>
+                    <div class="bubble">${marked.parse(chat.reply)}</div>
+                </div>`;
+                addCopyButtons();
+            };
+            list.appendChild(div);
+        });
+    }catch(error){ console.log(error); }
 }
 
 // =========================
 // SEND MESSAGE
 // =========================
 window.sendMessage = async function(){
-    // ✅ FIX: prevent double send
     if(isSending) return;
 
     const inputField = document.getElementById("userInput");
@@ -928,7 +1066,6 @@ window.sendMessage = async function(){
     clearImgPreview();
     scrollChatToBottom();
 
-    // ✅ FIX BUG 7: unique bubble ID every time — no old bubble overwrite
     const bubbleID = "sb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
 
     const aiMsg = document.createElement("div");
@@ -941,7 +1078,6 @@ window.sendMessage = async function(){
     chatContent.appendChild(aiMsg);
     scrollChatToBottom();
 
-    // Helper to get bubble safely
     const getBubble = () => document.getElementById(bubbleID);
 
     // ── Agent mode ──
@@ -963,16 +1099,14 @@ window.sendMessage = async function(){
             const data = await resp.json();
             const bubble = getBubble();
             if(bubble) bubble.innerHTML = marked.parse(data.reply);
-            // ✅ FIX BUG 11: remove agent badge after reply
             if(agentBadgeEl) agentBadgeEl.remove();
             addVoiceBtn(aiMsg, data.reply);
             addCopyButtons();
-            // ✅ Math render karo
             if(window.MathJax && bubble){
                 MathJax.typesetPromise([bubble]).catch(e=>console.log(e));
             }
             await saveChatToFirebase(userText, data.reply);
-            loadChats();
+            loadSessions(); // Refresh sidebar
         }catch(e){
             const bubble = getBubble();
             if(bubble) bubble.innerHTML = "❌ Error. Try again.";
@@ -990,9 +1124,11 @@ window.sendMessage = async function(){
             body: JSON.stringify({
                 message: userText,
                 uid: currentUID || "anonymous",
-                image_data: imageToSend || null,  // ✅ saved before clearImgPreview
+                image_data: imageToSend || null,
                 agent: false,
-                stream: true
+                stream: true,
+                mode: currentMode,
+                web_search: webSearchEnabled
             })
         });
 
@@ -1000,7 +1136,7 @@ window.sendMessage = async function(){
         const decoder = new TextDecoder("utf-8");
         let fullReply = "";
         const bubble = getBubble();
-        if(bubble) bubble.innerHTML = ""; // clear typing dots
+        if(bubble) bubble.innerHTML = "";
 
         while(true){
             const { done, value } = await reader.read();
@@ -1020,21 +1156,17 @@ window.sendMessage = async function(){
                         }
                     }
                     if(parsed.done){
-                        // ✅ Render math after full reply received
                         const b = getBubble();
                         if(b && window.MathJax){
                             await MathJax.typesetPromise([b]);
                         }
-                    }
-                    if(parsed.done){
                         addVoiceBtn(aiMsg, fullReply);
                         addCopyButtons();
-                        const b = getBubble();
-                        if(b) renderEnhancements(b);
-                        // Add message actions
+                        const b2 = getBubble();
+                        if(b2) renderEnhancements(b2);
                         addMsgActions(aiMsg, userText, fullReply);
                         await saveChatToFirebase(userText, fullReply);
-                        loadChats();
+                        loadSessions(); // Refresh sidebar with new title
                     }
                     if(parsed.error){
                         const b = getBubble();
@@ -1055,7 +1187,6 @@ window.sendMessage = async function(){
 
 // =========================
 // VOICE INPUT
-// ✅ FIX BUG 8: interimResults false — no half-words on Enter
 // =========================
 window.startVoiceInput = function(){
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1073,7 +1204,7 @@ window.startVoiceInput = function(){
 
     recognition = new SpeechRecognition();
     recognition.lang = "en-US";
-    recognition.interimResults = false; // ✅ FIX BUG 8: only final results
+    recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
     isRecording = true;
@@ -1083,7 +1214,6 @@ window.startVoiceInput = function(){
     recognition.start();
 
     recognition.onresult = (event)=>{
-        // Only final result — no partial words
         document.getElementById("userInput").value =
             event.results[0][0].transcript;
     };
@@ -1212,8 +1342,8 @@ function addMsgActions(msgEl, userText, reply){
     const actions = document.createElement("div");
     actions.className = "msg-actions";
     actions.innerHTML = `
-        <button class="msg-action-btn" onclick="copyMessage('${reply.replace(/'/g,"\'")}')">📋 Copy</button>
-        <button class="msg-action-btn" onclick="bookmarkMessage('${userText.replace(/'/g,"\'")}','${reply.substring(0,200).replace(/'/g,"\'")}')">🔖 Bookmark</button>
+        <button class="msg-action-btn" onclick="copyMessage('${reply.replace(/'/g,"\\'")}')">📋 Copy</button>
+        <button class="msg-action-btn" onclick="bookmarkMessage('${userText.replace(/'/g,"\\'")}','${reply.substring(0,200).replace(/'/g,"\\'")}')">🔖 Bookmark</button>
     `;
     msgEl.appendChild(actions);
 }
@@ -1226,7 +1356,7 @@ function scrollChatToBottom(){
     const chatArea = document.getElementById("chatArea");
     chatArea.scrollTop = chatArea.scrollHeight;
 }
-function escapeHtml(str){
+window.escapeHtml = function(str){
     if(!str) return "";
     return str
         .replace(/&/g,"&amp;")
@@ -1408,13 +1538,11 @@ window.retryLast = async function(){
 // PRISM + MATHJAX after render
 // =======================
 function renderEnhancements(bubble){
-    // Prism code highlighting
     if(window.Prism){
         bubble.querySelectorAll("pre code").forEach(block => {
             Prism.highlightElement(block);
         });
     }
-    // MathJax math rendering
     if(window.MathJax){
         setTimeout(() => {
             MathJax.typesetPromise([bubble]).catch(() => {});
