@@ -1,0 +1,7 @@
+flask
+openai
+requests
+PyPDF2
+pandas
+gunicorn
+python-dotenv

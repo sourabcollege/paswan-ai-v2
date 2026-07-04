@@ -1,0 +1,13 @@
+paswan-ai-v2-main/
+│
+├── static/
+│   ├── intro-desktop.mp4
+│   └── intro-mobile.mp4
+├── templates/
+│   └── index.html
+├── .gitignore
+├── Procfile
+├── app.py
+├── memory.db
+├── requirements.txt
+└── tree.py
