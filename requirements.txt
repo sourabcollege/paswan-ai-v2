@@ -1,10 +1,8 @@
-flask
+Flask
 openai
-<<<<<<< HEAD
+gunicorn
+python-dotenv
 requests
 PyPDF2
 pandas
-=======
->>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
-gunicorn
-python-dotenv
+pypdf
