@@ -10,12 +10,15 @@
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-css.min.js"></script>
+<<<<<<< HEAD
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-java.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-c.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-cpp.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-go.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-rust.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-typescript.min.js"></script>
+=======
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 <!-- MathJax - Math Rendering -->
 <script>
 window.MathJax = {
@@ -101,6 +104,12 @@ margin-top:12px;
 }
 
 .copy-btn{
+<<<<<<< HEAD
+=======
+position:absolute;
+top:10px;
+right:10px;
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 background:#2563eb;
 color:white;
 border:none;
@@ -109,8 +118,12 @@ border-radius:8px;
 cursor:pointer;
 font-size:12px;
 transition:0.2s;
+<<<<<<< HEAD
 white-space:nowrap;
 flex-shrink:0;
+=======
+z-index:10;
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 }
 
 .copy-btn:hover{
@@ -272,10 +285,15 @@ max-width:100%;
 word-break:break-word;
 }
 
+<<<<<<< HEAD
 /* FIX: User message preserves line breaks and formatting */
 .user .bubble{
 background:#2563eb;
 white-space:pre-wrap;
+=======
+.user .bubble{
+background:#2563eb;
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 }
 
 .ai .bubble{
@@ -306,7 +324,11 @@ background:linear-gradient(transparent,rgba(15,23,42,0.95));
 width:100%;
 max-width:800px;
 display:flex;
+<<<<<<< HEAD
 align-items:flex-end;
+=======
+align-items:center;
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 gap:10px;
 padding:12px 18px;
 border-radius:25px;
@@ -314,6 +336,7 @@ background:rgba(15,23,42,0.8);
 border:1px solid rgba(255,255,255,0.1);
 }
 
+<<<<<<< HEAD
 /* FIX: Textarea input style */
 .input-box textarea{
 flex:1;
@@ -331,6 +354,8 @@ line-height:1.5;
 padding:4px 0;
 }
 
+=======
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 .input-box input{
 flex:1;
 background:none;
@@ -348,10 +373,16 @@ background:none;
 cursor:pointer;
 font-size:18px;
 color:#38bdf8;
+<<<<<<< HEAD
 padding:4px;
 }
 
 #attachUpload{
+=======
+}
+
+#imageUpload{
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 display:none;
 }
 
@@ -497,7 +528,10 @@ z-index:100;
 }
 
 .input-box{padding:10px;border-radius:18px;}
+<<<<<<< HEAD
 .input-box textarea{font-size:15px;}
+=======
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 .input-box input{font-size:15px;}
 .message{max-width:95%;}
 .bubble{font-size:15px;}
@@ -633,6 +667,7 @@ object-fit:contain;background:black;
 }
 }
 
+<<<<<<< HEAD
 
 /* Run button */
 .run-btn{
@@ -682,20 +717,32 @@ border-color:rgba(239,68,68,0.3);
 </style>
 <base target="_blank">
 <base target="_blank">
+=======
+</style>
+<base target="_blank">
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 </head>
 
 <script>
 window.handleKeyPress = function(event){
+<<<<<<< HEAD
     if(event.key === "Enter" && !event.shiftKey){
         event.preventDefault();
         sendMessage();
     }
+=======
+    if(event.key === "Enter"){ sendMessage(); }
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 }
 
 window.createNewChat = async function(){
     try{ 
         await fetch("/new_session", {method:"POST"}); 
+<<<<<<< HEAD
         loadSessions();
+=======
+        loadSessions(); // Reload sidebar
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
     }catch(e){}
     document.getElementById("chatContent").innerHTML = `
     <div class="welcome-screen" id="welcomeScreen">
@@ -793,7 +840,11 @@ window.showMemory = async function(){
     <div class="history-list" id="history-list"></div>
 </div>
 
+<<<<<<< HEAD
 <div style="font-size:12px;opacity:0.5;">v3.1 • paswan.ai</div>
+=======
+<div style="font-size:12px;opacity:0.5;">v3.0 • GPT-4o</div>
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 </div>
 
 <div class="main-chat-container">
@@ -824,6 +875,7 @@ window.showMemory = async function(){
                 <input type="checkbox" id="webSearchCheck" onchange="toggleWebSearch()">
                 🌐 Web Search
             </label>
+<<<<<<< HEAD
             <label class="search-toggle" id="autoRunToggle" title="AI khud code likhega, run karega, aur error par khud fix karega">
                 <input type="checkbox" id="autoRunCheck" onchange="toggleAutoRun()">
                 ⚙️ Auto-Run Code
@@ -836,6 +888,14 @@ window.showMemory = async function(){
             <span id="imgThumbWrap"></span>
             <span id="fileThumbWrap"></span>
             <textarea id="userInput" placeholder="Ask paswan.ai anything..." onkeypress="handleKeyPress(event)" rows="1"></textarea>
+=======
+        </div>
+        <div class="input-box">
+            <label for="imageUpload" class="upload-btn-label">➕</label>
+            <input type="file" id="imageUpload" accept="image/*" onchange="handleImageUpload(event)">
+            <span id="imgThumbWrap"></span>
+            <input type="text" id="userInput" placeholder="Ask paswan.ai anything..." onkeypress="handleKeyPress(event)">
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
             <button class="mic-btn" id="micBtn" onclick="startVoiceInput()">🎤</button>
             <button class="send-btn" onclick="sendMessage()">Send</button>
         </div>
@@ -891,6 +951,7 @@ window.addEventListener("load", ()=>{
     document.body.style.backgroundImage =
         `url('https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1920&q=80')`;
 
+<<<<<<< HEAD
     // FIX: Textarea auto-resize
     const userInput = document.getElementById("userInput");
     if(userInput){
@@ -900,6 +961,9 @@ window.addEventListener("load", ()=>{
         });
     }
 
+=======
+    // Load sessions instead of just history
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
     loadSessions();
 });
 
@@ -926,7 +990,10 @@ const provider = new GoogleAuthProvider();
 
 let currentUID = null;
 let uploadedImageBase64 = null;
+<<<<<<< HEAD
 let uploadedFileData = null;
+=======
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 let ttsPlaying = null;
 let isRecording = false;
 let recognition = null;
@@ -1020,6 +1087,10 @@ async function loadSessions(){
         });
     }catch(error){ 
         console.log("Load sessions error:", error);
+<<<<<<< HEAD
+=======
+        // Fallback to old history
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
         loadHistoryFallback();
     }
 }
@@ -1033,7 +1104,11 @@ async function switchToSession(sessionId){
         });
         currentSessionId = sessionId;
         await loadSessionMessages(sessionId);
+<<<<<<< HEAD
         loadSessions();
+=======
+        loadSessions(); // Refresh to show active
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
     }catch(e){ console.log(e); }
 }
 
@@ -1057,12 +1132,19 @@ async function loadSessionMessages(sessionId){
             // User message
             const userDiv = document.createElement("div");
             userDiv.className = "message user";
+<<<<<<< HEAD
             // FIX: Preserve line breaks + indentation using textContent
             userDiv.innerHTML = `
                 <div class="sender-title">You</div>
                 <div class="bubble"></div>
             `;
             userDiv.querySelector(".bubble").appendChild(document.createTextNode(msg.user_message || ""));
+=======
+            userDiv.innerHTML = `
+                <div class="sender-title">You</div>
+                <div class="bubble">${escapeHtml(msg.user_message || "")}</div>
+            `;
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
             chatContent.appendChild(userDiv);
 
             // AI reply
@@ -1073,6 +1155,7 @@ async function loadSessionMessages(sessionId){
                 <div class="bubble">${marked.parse(msg.ai_reply || "")}</div>
             `;
             chatContent.appendChild(aiDiv);
+<<<<<<< HEAD
 
             // FIX: Enhance loaded messages (copy buttons, prism, mathjax, voice, actions)
             addCodeBlockButtons();
@@ -1086,6 +1169,14 @@ async function loadSessionMessages(sessionId){
 
         scrollChatToBottom();
 
+=======
+        });
+
+        addCopyButtons();
+        scrollChatToBottom();
+
+        // Math render
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
         if(window.MathJax){
             MathJax.typesetPromise([chatContent]).catch(()=>{});
         }
@@ -1106,16 +1197,24 @@ async function loadHistoryFallback(){
             div.innerHTML = `<span class="session-title">💬 ${escapeHtml(chat.message.substring(0, 40))}</span>`;
             div.onclick = function(){
                 hideWelcomeScreen();
+<<<<<<< HEAD
                 const chatContent = document.getElementById("chatContent");
                 chatContent.innerHTML = `
                 <div class="message user">
                     <div class="sender-title">You</div>
                     <div class="bubble" id="fallbackUserBubble"></div>
+=======
+                document.getElementById("chatContent").innerHTML = `
+                <div class="message user">
+                    <div class="sender-title">You</div>
+                    <div class="bubble">${escapeHtml(chat.message)}</div>
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
                 </div>
                 <div class="message ai">
                     <div class="sender-title">paswan.ai</div>
                     <div class="bubble">${marked.parse(chat.reply)}</div>
                 </div>`;
+<<<<<<< HEAD
                 // FIX: Preserve line breaks + indentation using textContent
                 const fbBubble = chatContent.querySelector("#fallbackUserBubble");
                 if(fbBubble) fbBubble.appendChild(document.createTextNode(chat.message));
@@ -1131,6 +1230,9 @@ async function loadHistoryFallback(){
                     addVoiceBtn(aiMsg, chat.reply);
                     addMsgActions(aiMsg, chat.message, chat.reply);
                 }
+=======
+                addCopyButtons();
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
             };
             list.appendChild(div);
         });
@@ -1146,16 +1248,24 @@ window.sendMessage = async function(){
     const inputField = document.getElementById("userInput");
     const userText = inputField.value.trim();
 
+<<<<<<< HEAD
     if(userText === "" && !uploadedImageBase64 && !uploadedFileData) return;
+=======
+    if(userText === "" && !uploadedImageBase64) return;
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 
     isSending = true;
     _lastMsg = userText;
     hideWelcomeScreen();
     const chatContent = document.getElementById("chatContent");
     const imageToSend = uploadedImageBase64;
+<<<<<<< HEAD
     const fileToSend = uploadedFileData;
     _lastImg = imageToSend;
     _lastFile = fileToSend;
+=======
+    _lastImg = imageToSend;
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 
     // Agent badge
     let agentBadgeEl = null;
@@ -1169,6 +1279,7 @@ window.sendMessage = async function(){
     // User message bubble
     const userMsg = document.createElement("div");
     userMsg.className = "message user";
+<<<<<<< HEAD
     // FIX: Preserve line breaks + indentation in user messages using textContent
     // (avoids HTML injection risk and reliably keeps whitespace, unlike manual \n->br regex)
     userMsg.innerHTML = `
@@ -1196,6 +1307,18 @@ window.sendMessage = async function(){
     inputField.style.height = "auto";
     clearImgPreview();
     clearFilePreview();
+=======
+    userMsg.innerHTML = `
+    <div class="sender-title">You</div>
+    <div class="bubble">
+        ${escapeHtml(userText)}
+        ${imageToSend ? `<br><img src="${imageToSend}" class="uploaded-img-preview">` : ""}
+    </div>`;
+    chatContent.appendChild(userMsg);
+
+    inputField.value = "";
+    clearImgPreview();
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
     scrollChatToBottom();
 
     const bubbleID = "sb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
@@ -1222,7 +1345,10 @@ window.sendMessage = async function(){
                     message: userText,
                     uid: currentUID || "anonymous",
                     image_data: null,
+<<<<<<< HEAD
                     file_data: fileToSend || null,
+=======
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
                     agent: true,
                     stream: false,
                     mode: currentMode,
@@ -1234,16 +1360,24 @@ window.sendMessage = async function(){
             if(bubble) bubble.innerHTML = marked.parse(data.reply);
             if(agentBadgeEl) agentBadgeEl.remove();
             addVoiceBtn(aiMsg, data.reply);
+<<<<<<< HEAD
             addCodeBlockButtons();
             if(bubble){
                 renderEnhancements(bubble);
                 addMsgActions(aiMsg, userText, data.reply);
             }
+=======
+            addCopyButtons();
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
             if(window.MathJax && bubble){
                 MathJax.typesetPromise([bubble]).catch(e=>console.log(e));
             }
             await saveChatToFirebase(userText, data.reply);
+<<<<<<< HEAD
             loadSessions();
+=======
+            loadSessions(); // Refresh sidebar
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
         }catch(e){
             const bubble = getBubble();
             if(bubble) bubble.innerHTML = "❌ Error. Try again.";
@@ -1253,6 +1387,7 @@ window.sendMessage = async function(){
         return;
     }
 
+<<<<<<< HEAD
     // ── Auto-Run Code mode: AI likhta hai, khud run karta hai, error par khud fix karta hai ──
     if(autoRunEnabled && !imageToSend){
         let runBadgeEl = document.createElement("div");
@@ -1301,6 +1436,8 @@ window.sendMessage = async function(){
         return;
     }
 
+=======
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
     // ── Streaming mode ──
     try{
         const resp = await fetch("/chat", {
@@ -1310,7 +1447,10 @@ window.sendMessage = async function(){
                 message: userText,
                 uid: currentUID || "anonymous",
                 image_data: imageToSend || null,
+<<<<<<< HEAD
                 file_data: fileToSend || null,
+=======
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
                 agent: false,
                 stream: true,
                 mode: currentMode,
@@ -1347,6 +1487,7 @@ window.sendMessage = async function(){
                             await MathJax.typesetPromise([b]);
                         }
                         addVoiceBtn(aiMsg, fullReply);
+<<<<<<< HEAD
                         addCodeBlockButtons();
                         const b2 = getBubble();
                         if(b2){
@@ -1355,6 +1496,14 @@ window.sendMessage = async function(){
                         }
                         await saveChatToFirebase(userText, fullReply);
                         loadSessions();
+=======
+                        addCopyButtons();
+                        const b2 = getBubble();
+                        if(b2) renderEnhancements(b2);
+                        addMsgActions(aiMsg, userText, fullReply);
+                        await saveChatToFirebase(userText, fullReply);
+                        loadSessions(); // Refresh sidebar with new title
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
                     }
                     if(parsed.error){
                         const b = getBubble();
@@ -1465,6 +1614,7 @@ function addVoiceBtn(msgEl, text){
 }
 
 // =========================
+<<<<<<< HEAD
 // ATTACH BUTTON — routes to image OR file (PDF/CSV/TXT) handling
 // Same ➕ button now accepts both; we decide by MIME type / extension.
 // =========================
@@ -1481,6 +1631,13 @@ window.handleAttachUpload = function(event){
 };
 
 function handleImageUpload(file){
+=======
+// IMAGE UPLOAD
+// =========================
+window.handleImageUpload = function(event){
+    const file = event.target.files[0];
+    if(!file) return;
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
     const reader = new FileReader();
     reader.onload = function(e){
         uploadedImageBase64 = e.target.result;
@@ -1488,6 +1645,7 @@ function handleImageUpload(file){
             `<img src="${e.target.result}" class="img-thumb">`;
     };
     reader.readAsDataURL(file);
+<<<<<<< HEAD
 }
 
 async function handleFileUpload(file){
@@ -1528,6 +1686,14 @@ function clearImgPreview(){
     uploadedImageBase64 = null;
     document.getElementById("imgThumbWrap").innerHTML = "";
     document.getElementById("attachUpload").value = "";
+=======
+};
+
+function clearImgPreview(){
+    uploadedImageBase64 = null;
+    document.getElementById("imgThumbWrap").innerHTML = "";
+    document.getElementById("imageUpload").value = "";
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 }
 
 // =========================
@@ -1549,6 +1715,7 @@ document.addEventListener("click", function(event){
 // =========================
 // COPY BUTTONS
 // =========================
+<<<<<<< HEAD
 // =======================
 // UNIVERSAL CLIPBOARD HELPER
 // navigator.clipboard sirf secure context (https:// ya localhost) mein kaam
@@ -1670,19 +1837,40 @@ function addCodeBlockButtons(){
 
         block.parentNode.insertBefore(wrapper, block);
         wrapper.appendChild(btnWrap);
+=======
+function addCopyButtons(){
+    document.querySelectorAll("pre").forEach((block)=>{
+        if(block.parentElement.classList.contains("code-block")) return;
+        const wrapper = document.createElement("div");
+        wrapper.className = "code-block";
+        const button = document.createElement("button");
+        button.className = "copy-btn";
+        button.innerText = "Copy";
+        button.onclick = function(){
+            navigator.clipboard.writeText(block.innerText);
+            button.innerText = "Copied!";
+            setTimeout(()=>{ button.innerText = "Copy"; }, 2000);
+        };
+        block.parentNode.insertBefore(wrapper, block);
+        wrapper.appendChild(button);
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
         wrapper.appendChild(block);
     });
 }
 
+<<<<<<< HEAD
 // Keep old name as alias for compatibility
 window.addCopyButtons = addCodeBlockButtons;
 
+=======
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 // =========================
 // HELPERS
 // =========================
 function addMsgActions(msgEl, userText, reply){
     const actions = document.createElement("div");
     actions.className = "msg-actions";
+<<<<<<< HEAD
 
     const copyBtn = document.createElement("button");
     copyBtn.className = "msg-action-btn";
@@ -1700,6 +1888,12 @@ function addMsgActions(msgEl, userText, reply){
 
     actions.appendChild(copyBtn);
     actions.appendChild(bmBtn);
+=======
+    actions.innerHTML = `
+        <button class="msg-action-btn" onclick="copyMessage('${reply.replace(/'/g,"\\'")}')">📋 Copy</button>
+        <button class="msg-action-btn" onclick="bookmarkMessage('${userText.replace(/'/g,"\\'")}','${reply.substring(0,200).replace(/'/g,"\\'")}')">🔖 Bookmark</button>
+    `;
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
     msgEl.appendChild(actions);
 }
 
@@ -1729,10 +1923,15 @@ window.speechSynthesis && speechSynthesis.addEventListener("voiceschanged", ()=>
 // =======================
 let currentMode = "default";
 let webSearchEnabled = false;
+<<<<<<< HEAD
 let autoRunEnabled = false;
 let _lastMsg = "";
 let _lastImg = null;
 let _lastFile = null;
+=======
+let _lastMsg = "";
+let _lastImg = null;
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 
 window.setMode = function(mode){
     currentMode = mode;
@@ -1746,11 +1945,14 @@ window.toggleWebSearch = function(){
     document.getElementById("searchToggle").classList.toggle("on", webSearchEnabled);
 };
 
+<<<<<<< HEAD
 window.toggleAutoRun = function(){
     autoRunEnabled = document.getElementById("autoRunCheck").checked;
     document.getElementById("autoRunToggle").classList.toggle("on", autoRunEnabled);
 };
 
+=======
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 // =======================
 // NOTES SYSTEM
 // =======================
@@ -1866,7 +2068,12 @@ window.deleteBookmark = async function(id){
 // COPY MESSAGE
 // =======================
 window.copyMessage = function(text){
+<<<<<<< HEAD
     copyToClipboard(text, () => showToast("📋 Copied!"), () => showToast("❌ Copy nahi ho paya. Manually select karke copy karein."));
+=======
+    navigator.clipboard.writeText(text);
+    showToast("📋 Copied!");
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 };
 
 // =======================
@@ -1889,6 +2096,7 @@ function showToast(msg){
 // RETRY
 // =======================
 window.retryLast = async function(){
+<<<<<<< HEAD
     if(!_lastMsg && !_lastImg && !_lastFile) return;
     document.getElementById("userInput").value = _lastMsg;
     uploadedImageBase64 = _lastImg;
@@ -1897,6 +2105,11 @@ window.retryLast = async function(){
         document.getElementById("fileThumbWrap").innerHTML =
             `<span class="file-badge" onclick="clearFilePreview()" title="Click to remove">📄 ${_lastFile.name} ✕</span>`;
     }
+=======
+    if(!_lastMsg && !_lastImg) return;
+    document.getElementById("userInput").value = _lastMsg;
+    uploadedImageBase64 = _lastImg;
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
     await sendMessage();
 };
 
@@ -1918,4 +2131,8 @@ function renderEnhancements(bubble){
 
 </script>
 </body>
+<<<<<<< HEAD
 </html>
+=======
+</html>
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0

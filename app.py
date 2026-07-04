@@ -1,15 +1,23 @@
 import sqlite3
 import os
+<<<<<<< HEAD
 import sys
+=======
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 import uuid
 import json
 import re
 import math
+<<<<<<< HEAD
 import subprocess
 import tempfile
 import urllib.request
 import urllib.parse
 import urllib.error
+=======
+import urllib.request
+import urllib.parse
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, session, Response, stream_with_context
 from openai import OpenAI
@@ -199,9 +207,13 @@ def update_session_title(sid, user_msg):
 # ==================================================
 session_memories = {}
 MAX_MEMORY = 20
+<<<<<<< HEAD
 SUMMARY_THRESHOLD = 10          # FIX: summarize sooner so raw history stays small
 HISTORY_WINDOW = 6              # FIX: send fewer past turns per request (was 10 / 8)
 MAX_USER_INPUT_CHARS = 16000    # FIX: ~4000 tokens guard so one paste can't blow the TPM limit
+=======
+SUMMARY_THRESHOLD = 16
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 
 def get_memory(sid):
     if sid not in session_memories:
@@ -272,6 +284,7 @@ def save_chat_db(sid, uid, user_msg, reply, mode="default"):
     conn.close()
 
 # ==================================================
+<<<<<<< HEAD
 # FIX: FRIENDLY ERROR MESSAGES (rate limit / oversized request)
 # ==================================================
 def friendly_error(e):
@@ -289,6 +302,8 @@ def friendly_error(e):
     return f"❌ Kuch galat ho gaya: {msg}"
 
 # ==================================================
+=======
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 # WEB SEARCH (DuckDuckGo — No API key needed!)
 # ==================================================
 def web_search(query, max_results=5):
@@ -384,6 +399,7 @@ def process_tools(text):
     return text
 
 # ==================================================
+<<<<<<< HEAD
 # CODE EXECUTION — local subprocess runner
 # NOTE: Piston (emkc.org) ab free public API nahi hai (Feb 2026 se auth key
 # chahiye — https://github.com/engineer-man/piston). Isliye code ab seedha
@@ -473,13 +489,19 @@ def extract_file_text(file_storage, ext):
     raise ValueError("Unsupported file type. Supported: pdf, csv, txt, md, py, js, json")
 
 # ==================================================
+=======
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 # AGENT
 # ==================================================
 def run_agent(user_message, sid, sys_prompt):
     if not client:
         return "❌ AI not configured."
     agent_sys = sys_prompt + "\nAGENT: Think step by step. End with 'Final Answer:'"
+<<<<<<< HEAD
     mem = list(get_memory(sid))[-HISTORY_WINDOW:]
+=======
+    mem = list(get_memory(sid))[-8:]
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
     messages = [{"role": "system", "content": agent_sys}] + mem + \
                [{"role": "user", "content": user_message}]
     try:
@@ -494,6 +516,7 @@ def run_agent(user_message, sid, sys_prompt):
             messages.append({"role": "assistant", "content": out})
             messages.append({"role": "user", "content": "Continue to final answer."})
     except Exception as e:
+<<<<<<< HEAD
         print("Agent error:", e)
         return friendly_error(e)
     return out or "Could not complete."
@@ -556,6 +579,12 @@ def run_agent_with_code_execution(user_msg, sid, sys_prompt):
     return reply, result
 
 # ==================================================
+=======
+        return f"❌ Agent error: {e}"
+    return out or "Could not complete."
+
+# ==================================================
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 # ROUTES
 # ==================================================
 @app.route("/")
@@ -570,6 +599,7 @@ def health():
     return jsonify({"status": "ok", "ai": bool(client), "model": TEXT_MODEL})
 
 # ==================================================
+<<<<<<< HEAD
 # FILE UPLOAD (PDF / CSV / TXT text extraction)
 # Same button as image upload — frontend decides which endpoint to call
 # based on the file's MIME type / extension.
@@ -617,6 +647,8 @@ def run_code_route():
     return jsonify({"output": result.get("stdout") or "", "returncode": result.get("returncode")})
 
 # ==================================================
+=======
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 # CHAT
 # ==================================================
 @app.route("/chat", methods=["POST"])
@@ -632,6 +664,7 @@ def chat():
     do_stream  = bool(data.get("stream", True))
     mode       = data.get("mode", "default")
     web_search_on = bool(data.get("web_search", False))
+<<<<<<< HEAD
     # Handle file upload from frontend
     file_data = data.get("file_data")
     file_context = ""
@@ -642,10 +675,13 @@ def chat():
         # Truncate if needed
         if len(file_context) > MAX_USER_INPUT_CHARS:
             file_context = file_context[:MAX_USER_INPUT_CHARS] + "\n...[truncated due to length]"
+=======
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 
     if not user_msg and not img_data:
         return jsonify({"reply": "Please send a message."})
 
+<<<<<<< HEAD
     # FIX: Proactively block oversized pastes instead of letting the API 413 out
     if len(user_msg) > MAX_USER_INPUT_CHARS:
         oversized_msg = ("⚠️ Ye message bahut bada hai (limit ~16,000 characters). "
@@ -659,6 +695,8 @@ def chat():
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
         return jsonify({"reply": oversized_msg})
 
+=======
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
     sid = session.get("session_id", str(uuid.uuid4()))
     ensure_session(sid, uid)
 
@@ -689,11 +727,14 @@ def chat():
             search_context = format_search_results(results, user_msg)
             sys_prompt += f"\n\nWEB SEARCH RESULTS (use these to answer):\n{search_context}"
 
+<<<<<<< HEAD
     # NEW: Uploaded file context
     if file_context:
         sys_prompt += (f"\n\nUPLOADED FILE ({file_name or 'file'}):\n{file_context}\n"
                         f"Use this file's content to answer the user's question when relevant.")
 
+=======
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
     # YouTube summarize
     yt_id = extract_youtube_id(user_msg) if user_msg else None
     if yt_id:
@@ -711,6 +752,7 @@ def chat():
         update_session_title(sid, user_msg)
         return jsonify({"reply": reply})
 
+<<<<<<< HEAD
     # NEW: Auto code execution — AI likhta hai, khud run karta hai, error aane par
     # khud fix karke dobara run karta hai jab tak sahi output na mile.
     auto_execute = bool(data.get("auto_execute", False))
@@ -732,6 +774,11 @@ def chat():
     # Build messages
     messages = [{"role": "system", "content": sys_prompt}]
     messages += list(get_memory(sid))[-HISTORY_WINDOW:]
+=======
+    # Build messages
+    messages = [{"role": "system", "content": sys_prompt}]
+    messages += list(get_memory(sid))[-10:]
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 
     # Image
     is_vision = False
@@ -776,8 +823,13 @@ def chat():
                 yield f"data: {json.dumps({'done': True})}\n\n"
 
             except Exception as e:
+<<<<<<< HEAD
                 error_msg = friendly_error(e)
                 print("Stream error:", str(e))
+=======
+                error_msg = str(e)
+                print("Stream error:", error_msg)
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
                 yield f"data: {json.dumps({'error': error_msg})}\n\n"
 
         return Response(
@@ -799,7 +851,11 @@ def chat():
         return jsonify({"reply": reply})
     except Exception as e:
         print("Chat error:", e)
+<<<<<<< HEAD
         return jsonify({"reply": friendly_error(e)}), 200
+=======
+        return jsonify({"reply": f"❌ Error: {e}"}), 500
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
 
 # ==================================================
 # SESSIONS — Chat Groups
@@ -993,4 +1049,8 @@ def clear_memory():
 # ==================================================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
+<<<<<<< HEAD
     app.run(debug=False, host="0.0.0.0", port=port)
+=======
+    app.run(debug=False, host="0.0.0.0", port=port)
+>>>>>>> 303b5bc5b898fce6a5d26d42ee3c6f73fdabb2c0
