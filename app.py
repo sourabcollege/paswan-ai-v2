@@ -11,6 +11,7 @@ import tempfile
 import urllib.request
 import urllib.parse
 import urllib.error
+from io import BytesIO
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, session, Response, stream_with_context
 from openai import OpenAI
@@ -447,10 +448,20 @@ def review_large_file_stream(file_context, file_name, user_msg, sys_prompt):
     total = len(chunks)
     partial_findings = []
 
+    script_reminder = (
+        f"\n\nSCRIPT CONSISTENCY (critical): The user's own message was: \"{user_msg}\". "
+        "Pick ONE script based on how the user wrote that message (Hinglish in Roman letters, "
+        "plain English, or Devanagari Hindi) and use ONLY that script for your ENTIRE reply — "
+        "every heading, bullet, table cell, and especially any closing/summary paragraph. "
+        "Do not switch into Devanagari script partway through, even for a final summary line, "
+        "unless the user's own message was itself written in Devanagari script."
+    )
+
     review_sys = (sys_prompt + "\n\nYou are reviewing ONE PART of a larger file that has been "
                   "split into chunks. Only list concrete bugs, security issues, or bad patterns "
                   "you actually see IN THIS CHUNK — short bullet points, no full rewritten code, "
-                  "no preamble. If this chunk looks fine, just say 'No issues found in this part.'")
+                  "no preamble. If this chunk looks fine, just say 'No issues found in this part.'"
+                  + script_reminder)
 
     yield {"progress": f"📄 File {total} parts mein todi — review shuru ho raha hai..."}
 
@@ -478,7 +489,8 @@ def review_large_file_stream(file_context, file_name, user_msg, sys_prompt):
     synth_prompt = (sys_prompt + "\n\nBelow are per-chunk review notes an assistant already made while "
                      "reading a large file piece by piece. Merge them into ONE clear, de-duplicated final "
                      "answer: bullet the real bugs/security issues found, then suggest better patterns. "
-                     "Mention if any part had partial/no findings. Keep it organized by severity, not by chunk.")
+                     "Mention if any part had partial/no findings. Keep it organized by severity, not by chunk."
+                     + script_reminder)
     try:
         final = call_groq_with_retry(
             model=TEXT_MODEL,
@@ -877,6 +889,117 @@ def run_code_route():
     if stderr or result.get("returncode", 0) != 0:
         return jsonify({"error": stderr or (result.get("stdout") or "Unknown error"), "returncode": result.get("returncode")})
     return jsonify({"output": result.get("stdout") or "", "returncode": result.get("returncode")})
+
+# ==================================================
+# NEW FEATURE: EXPORT AI REPLY AS A REAL PDF FILE
+# Lets the user download any AI reply (resume, report, notes, etc.) as a
+# nicely formatted PDF — like Claude.ai's file downloads — instead of just
+# copy-pasting markdown. Uses reportlab (Platypus) to turn the reply's
+# markdown into headings/bullets/paragraphs in an actual PDF document.
+# ==================================================
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import inch
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer,
+                                 ListFlowable, ListItem, HRFlowable)
+
+def _md_inline_to_reportlab(text):
+    """Convert a small, safe subset of inline markdown (**bold**, *italic*,
+    `code`) into ReportLab's Paragraph markup. Escapes raw HTML first so
+    user/AI text can never break the PDF layout."""
+    text = (text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
+    text = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", text)
+    text = re.sub(r"(?<!\*)\*(?!\*)(.+?)\*(?!\*)", r"<i>\1</i>", text)
+    text = re.sub(r"`(.+?)`", r"<font face='Courier'>\1</font>", text)
+    return text
+
+def markdown_to_pdf_bytes(md_text, title=None):
+    """Render a markdown-ish string (# headings, **bold**, *italic*, `code`,
+    - bullet lists, 1. numbered lists, --- rules, plain paragraphs, and
+    simple | table | rows) into a formatted PDF. Returns raw PDF bytes."""
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=letter,
+                             leftMargin=0.75 * inch, rightMargin=0.75 * inch,
+                             topMargin=0.75 * inch, bottomMargin=0.75 * inch)
+    styles = getSampleStyleSheet()
+    body_style   = ParagraphStyle("Body",   parent=styles["Normal"],   fontSize=10.5, leading=15, spaceAfter=6)
+    h1_style     = ParagraphStyle("H1",     parent=styles["Heading1"], fontSize=17,   spaceAfter=8)
+    h2_style     = ParagraphStyle("H2",     parent=styles["Heading2"], fontSize=13.5, spaceAfter=6, spaceBefore=10)
+    h3_style     = ParagraphStyle("H3",     parent=styles["Heading3"], fontSize=11.5, spaceAfter=4, spaceBefore=8)
+    bullet_style = ParagraphStyle("Bullet", parent=body_style,        leftIndent=14)
+
+    story = []
+    if title:
+        story.append(Paragraph(_md_inline_to_reportlab(title), h1_style))
+        story.append(Spacer(1, 6))
+
+    bullet_buffer = []
+    def flush_bullets():
+        if bullet_buffer:
+            items = [ListItem(Paragraph(_md_inline_to_reportlab(b), bullet_style)) for b in bullet_buffer]
+            story.append(ListFlowable(items, bulletType="bullet", start="•", leftIndent=18))
+            bullet_buffer.clear()
+
+    for raw_line in md_text.replace("\r\n", "\n").split("\n"):
+        line = raw_line.strip()
+        if not line:
+            flush_bullets()
+            story.append(Spacer(1, 4))
+            continue
+        if re.match(r"^-{3,}$", line) or re.match(r"^\*{3,}$", line):
+            flush_bullets()
+            story.append(HRFlowable(width="100%", thickness=0.6, color="#999999", spaceBefore=6, spaceAfter=6))
+            continue
+        if line.startswith("### "):
+            flush_bullets(); story.append(Paragraph(_md_inline_to_reportlab(line[4:]), h3_style)); continue
+        if line.startswith("## "):
+            flush_bullets(); story.append(Paragraph(_md_inline_to_reportlab(line[3:]), h2_style)); continue
+        if line.startswith("# "):
+            flush_bullets(); story.append(Paragraph(_md_inline_to_reportlab(line[2:]), h1_style)); continue
+        if line.startswith(("- ", "* ", "• ")):
+            bullet_buffer.append(line[2:].strip()); continue
+        if re.match(r"^\d+\.\s", line):
+            bullet_buffer.append(re.sub(r"^\d+\.\s", "", line)); continue
+        if line.startswith("|"):
+            # Simple markdown table row — render as one plain text row.
+            # Skip the header/body separator row (|---|---|).
+            flush_bullets()
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            if all(re.match(r"^:?-{2,}:?$", c) for c in cells if c):
+                continue
+            story.append(Paragraph(_md_inline_to_reportlab("   |   ".join(cells)), body_style))
+            continue
+        flush_bullets()
+        story.append(Paragraph(_md_inline_to_reportlab(line), body_style))
+
+    flush_bullets()
+    doc.build(story)
+    pdf_bytes = buf.getvalue()
+    buf.close()
+    return pdf_bytes
+
+@app.route("/export_pdf", methods=["POST"])
+def export_pdf_route():
+    data     = request.get_json(force=True) or {}
+    content  = (data.get("content") or "").strip()
+    title    = (data.get("title") or "").strip() or None
+    filename = (data.get("filename") or "document").strip()
+    filename = re.sub(r"[^A-Za-z0-9_\-]+", "_", filename).strip("_") or "document"
+
+    if not content:
+        return jsonify({"error": "Koi content nahi mila PDF banane ke liye."}), 400
+
+    try:
+        pdf_bytes = markdown_to_pdf_bytes(content, title=title)
+    except Exception as e:
+        print("PDF export error:", e)
+        return jsonify({"error": f"PDF banate waqt error aaya: {e}"}), 500
+
+    return Response(
+        pdf_bytes,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}.pdf"}
+    )
 
 # ==================================================
 # CHAT

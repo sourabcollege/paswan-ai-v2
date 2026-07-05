@@ -2173,9 +2173,66 @@ function addMsgActions(msgEl, userText, reply){
         bookmarkMessage(userText, reply.substring(0, 500));
     };
 
+    const pdfBtn = document.createElement("button");
+    pdfBtn.className = "msg-action-btn";
+    pdfBtn.textContent = "📄 PDF";
+    pdfBtn.onclick = function(){
+        downloadReplyAsPdf(reply, pdfBtn);
+    };
+
     actions.appendChild(copyBtn);
     actions.appendChild(bmBtn);
+    actions.appendChild(pdfBtn);
     msgEl.appendChild(actions);
+}
+
+// =========================
+// DOWNLOAD AI REPLY AS PDF
+// Sends the reply's markdown to the backend, which renders a real, nicely
+// formatted PDF (headings/bullets/bold) and streams it back — used for
+// resumes, reports, or any long reply the user wants to save as a file.
+// =========================
+async function downloadReplyAsPdf(reply, btnEl){
+    const originalText = btnEl ? btnEl.textContent : "";
+    if(btnEl){ btnEl.textContent = "⏳ Banaya ja raha hai..."; btnEl.disabled = true; }
+    try{
+        // Try to use the first markdown heading / bold line as a title +
+        // filename hint (e.g. a resume's name line), fall back to a generic one.
+        const firstLine = (reply.split("\n").find(l => l.trim().length > 0) || "paswan.ai Document")
+            .replace(/^#+\s*/, "").replace(/\*\*/g, "").trim();
+        const filenameBase = (firstLine || "document").slice(0, 60);
+
+        const resp = await fetch("/export_pdf", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                content: reply,
+                title: firstLine,
+                filename: filenameBase
+            })
+        });
+
+        if(!resp.ok){
+            const err = await resp.json().catch(() => ({}));
+            alert(err.error || "❌ PDF banane mein error aaya.");
+            return;
+        }
+
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${filenameBase.replace(/[^A-Za-z0-9_\-]+/g, "_") || "document"}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    }catch(e){
+        console.log(e);
+        alert("❌ PDF download mein connection error aaya.");
+    }finally{
+        if(btnEl){ btnEl.textContent = originalText; btnEl.disabled = false; }
+    }
 }
 
 function hideWelcomeScreen(){
