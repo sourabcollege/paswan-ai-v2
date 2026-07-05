@@ -200,6 +200,137 @@ color:#ef4444;
 background:rgba(239,68,68,0.1);
 }
 
+.history-item .session-menu-wrap{
+position:relative;
+}
+
+.history-item .session-menu-btn{
+background:none;
+border:none;
+color:#64748b;
+cursor:pointer;
+font-size:16px;
+padding:2px 8px;
+border-radius:4px;
+margin-left:6px;
+line-height:1;
+}
+
+.history-item .session-menu-btn:hover{
+color:#e2e8f0;
+background:rgba(255,255,255,0.1);
+}
+
+.session-dropdown{
+position:absolute;
+right:0;
+top:calc(100% + 4px);
+background:#1e293b;
+border:1px solid rgba(255,255,255,0.1);
+border-radius:8px;
+min-width:140px;
+box-shadow:0 8px 24px rgba(0,0,0,0.4);
+z-index:50;
+overflow:hidden;
+}
+
+.session-dropdown button{
+display:flex;
+align-items:center;
+gap:8px;
+width:100%;
+background:none;
+border:none;
+color:#e2e8f0;
+padding:10px 14px;
+font-size:13px;
+text-align:left;
+cursor:pointer;
+}
+
+.session-dropdown button:hover{
+background:rgba(255,255,255,0.08);
+}
+
+.session-dropdown button.danger{
+color:#ef4444;
+}
+
+.share-modal-overlay{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,0.6);
+display:flex;
+align-items:center;
+justify-content:center;
+z-index:1000;
+}
+
+.share-modal{
+background:#1e293b;
+border:1px solid rgba(255,255,255,0.1);
+border-radius:12px;
+padding:22px;
+width:90%;
+max-width:420px;
+}
+
+.share-modal h3{
+margin:0 0 14px;
+font-size:16px;
+color:#f1f5f9;
+}
+
+.share-modal .link-row{
+display:flex;
+gap:8px;
+margin-bottom:14px;
+}
+
+.share-modal input{
+flex:1;
+background:rgba(255,255,255,0.06);
+border:1px solid rgba(255,255,255,0.15);
+border-radius:8px;
+color:#e2e8f0;
+padding:8px 10px;
+font-size:13px;
+}
+
+.share-modal .copy-btn{
+background:#38bdf8;
+border:none;
+color:#0f172a;
+font-weight:600;
+padding:8px 14px;
+border-radius:8px;
+cursor:pointer;
+font-size:13px;
+white-space:nowrap;
+}
+
+.share-modal .close-btn{
+width:100%;
+background:rgba(255,255,255,0.08);
+border:none;
+color:#e2e8f0;
+padding:9px;
+border-radius:8px;
+cursor:pointer;
+font-size:13px;
+}
+
+.rename-input{
+flex:1;
+background:rgba(255,255,255,0.08);
+border:1px solid rgba(56,189,248,0.4);
+border-radius:6px;
+color:#e2e8f0;
+padding:4px 8px;
+font-size:14px;
+width:100%;
+}
+
 .main-chat-container{
 flex:1;
 display:flex;
@@ -396,6 +527,80 @@ transition:0.2s;vertical-align:middle;
 .voice-btn:hover{opacity:1;transform:scale(1.15);}
 .voice-btn.playing{color:#ec4899;animation:vPulse 1s infinite;}
 @keyframes vPulse{0%,100%{opacity:0.7;}50%{opacity:1;}}
+
+/* WORKING / PROGRESS INDICATOR — live status during multi-step work
+   (e.g. big-file chunked review), Codex-style "still working..." feel */
+.working-indicator{
+display:flex;align-items:center;gap:10px;
+padding:4px 0;
+}
+.working-spinner{
+width:14px;height:14px;border-radius:50%;
+border:2px solid rgba(56,189,248,0.25);
+border-top-color:#38bdf8;
+animation:workingSpin 0.8s linear infinite;
+flex-shrink:0;
+}
+@keyframes workingSpin{to{transform:rotate(360deg);}}
+.working-text{
+font-size:13.5px;color:#94a3b8;
+}
+
+/* CLARIFYING QUESTION CARD — AI asks before guessing, Claude-style */
+.clarify-card{
+display:flex;flex-direction:column;gap:10px;
+min-width:240px;max-width:420px;
+}
+.clarify-question{
+font-size:14.5px;font-weight:600;color:#e2e8f0;
+}
+.clarify-options{
+display:flex;flex-direction:column;gap:6px;
+}
+.clarify-option{
+display:flex;align-items:center;gap:10px;
+padding:9px 12px;border-radius:10px;
+background:rgba(56,189,248,0.08);
+border:1px solid rgba(56,189,248,0.25);
+color:#e2e8f0;font-size:13.5px;text-align:left;
+cursor:pointer;transition:0.15s;
+}
+.clarify-option:hover:not(:disabled){
+background:rgba(56,189,248,0.18);
+border-color:rgba(56,189,248,0.5);
+}
+.clarify-option:disabled{opacity:0.45;cursor:default;}
+.clarify-num{
+width:20px;height:20px;border-radius:50%;
+background:rgba(56,189,248,0.25);
+display:flex;align-items:center;justify-content:center;
+font-size:11px;font-weight:bold;flex-shrink:0;
+}
+.clarify-other-row{
+display:flex;gap:6px;margin-top:2px;
+}
+.clarify-other-input{
+flex:1;background:rgba(255,255,255,0.05);
+border:1px solid rgba(255,255,255,0.15);
+border-radius:8px;padding:7px 10px;
+color:white;font-size:13px;outline:none;
+}
+.clarify-other-input:focus{border-color:rgba(56,189,248,0.5);}
+.clarify-other-input:disabled{opacity:0.45;}
+.clarify-other-btn{
+background:#38bdf8;border:none;border-radius:8px;
+padding:7px 14px;color:#0f172a;font-weight:600;
+font-size:13px;cursor:pointer;
+}
+.clarify-other-btn:hover:not(:disabled){background:#0ea5e9;}
+.clarify-other-btn:disabled{opacity:0.45;cursor:default;}
+.clarify-skip-row{text-align:right;}
+.clarify-skip-btn{
+background:none;border:none;color:#94a3b8;
+font-size:12px;cursor:pointer;text-decoration:underline;
+padding:4px 2px;
+}
+.clarify-skip-btn:disabled{opacity:0.45;cursor:default;}
 
 /* Agent badge */
 .agent-badge{
@@ -681,7 +886,6 @@ border-color:rgba(239,68,68,0.3);
 
 </style>
 <base target="_blank">
-<base target="_blank">
 </head>
 
 <script>
@@ -831,8 +1035,8 @@ window.showMemory = async function(){
         </div>
         <!-- FIX: Textarea for multiline input -->
         <div class="input-box">
-            <label for="attachUpload" class="upload-btn-label" title="Upload image, PDF, CSV, TXT, or code file (.py/.js/.json/.md/.log)">➕</label>
-            <input type="file" id="attachUpload" accept="image/*,.pdf,.csv,.txt,.md,.py,.js,.json,.log" onchange="handleAttachUpload(event)">
+            <label for="attachUpload" class="upload-btn-label" title="Upload image, PDF, CSV, TXT, HTML, or code file (.py/.js/.json/.md/.html/.css/.xml/.yaml)">➕</label>
+            <input type="file" id="attachUpload" multiple accept="image/*,.pdf,.csv,.txt,.md,.html,.htm,.py,.js,.json,.log,.css,.xml,.yaml,.yml" onchange="handleAttachUpload(event)">
             <span id="imgThumbWrap"></span>
             <span id="fileThumbWrap"></span>
             <textarea id="userInput" placeholder="Ask paswan.ai anything..." onkeypress="handleKeyPress(event)" rows="1"></textarea>
@@ -991,26 +1195,24 @@ async function loadSessions(){
             titleSpan.className = "session-title";
             titleSpan.innerText = "💬 " + (s.title || "New Chat");
 
-            const delBtn = document.createElement("button");
-            delBtn.className = "delete-session-btn";
-            delBtn.innerHTML = "🗑";
-            delBtn.title = "Delete this chat";
-            delBtn.onclick = async (e) => {
+            // ⋮ menu wrapper (Rename / Share / Delete)
+            const menuWrap = document.createElement("div");
+            menuWrap.className = "session-menu-wrap";
+
+            const menuBtn = document.createElement("button");
+            menuBtn.className = "session-menu-btn";
+            menuBtn.innerHTML = "⋮";
+            menuBtn.title = "More options";
+            menuBtn.onclick = (e) => {
                 e.stopPropagation();
-                if(!confirm("Delete this chat?")) return;
-                await fetch(`/sessions/${s.session_id}`, {method: "DELETE"});
-                loadSessions();
-                if(s.current){
-                    document.getElementById("chatContent").innerHTML = `
-                    <div class="welcome-screen" id="welcomeScreen">
-                        <h1>Hello!<br>I am paswan.ai</h1>
-                        <p>How can I help you today?</p>
-                    </div>`;
-                }
+                closeAllSessionMenus();
+                openSessionMenu(menuWrap, s);
             };
 
+            menuWrap.appendChild(menuBtn);
+
             div.appendChild(titleSpan);
-            div.appendChild(delBtn);
+            div.appendChild(menuWrap);
 
             div.onclick = async () => {
                 await switchToSession(s.session_id);
@@ -1022,6 +1224,147 @@ async function loadSessions(){
         console.log("Load sessions error:", error);
         loadHistoryFallback();
     }
+}
+
+// ---- ⋮ session menu (Rename / Share / Delete) ----
+function closeAllSessionMenus(){
+    document.querySelectorAll(".session-dropdown").forEach(el => el.remove());
+}
+
+function openSessionMenu(menuWrap, s){
+    const dropdown = document.createElement("div");
+    dropdown.className = "session-dropdown";
+
+    const renameBtn = document.createElement("button");
+    renameBtn.innerHTML = "✏️ Rename";
+    renameBtn.onclick = (e) => {
+        e.stopPropagation();
+        closeAllSessionMenus();
+        startRenameSession(s);
+    };
+
+    const shareBtn = document.createElement("button");
+    shareBtn.innerHTML = "🔗 Share";
+    shareBtn.onclick = async (e) => {
+        e.stopPropagation();
+        closeAllSessionMenus();
+        await shareSession(s.session_id);
+    };
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "danger";
+    deleteBtn.innerHTML = "🗑 Delete";
+    deleteBtn.onclick = async (e) => {
+        e.stopPropagation();
+        closeAllSessionMenus();
+        if(!confirm("Delete this chat?")) return;
+        await fetch(`/sessions/${s.session_id}`, {method: "DELETE"});
+        loadSessions();
+        if(s.current){
+            document.getElementById("chatContent").innerHTML = `
+            <div class="welcome-screen" id="welcomeScreen">
+                <h1>Hello!<br>I am paswan.ai</h1>
+                <p>How can I help you today?</p>
+            </div>`;
+        }
+    };
+
+    dropdown.appendChild(renameBtn);
+    dropdown.appendChild(shareBtn);
+    dropdown.appendChild(deleteBtn);
+    menuWrap.appendChild(dropdown);
+}
+
+document.addEventListener("click", (e) => {
+    if(!e.target.closest(".session-menu-wrap")){
+        closeAllSessionMenus();
+    }
+});
+
+function startRenameSession(s){
+    // Swap the title span for an inline input, right in the sidebar
+    const item = document.querySelector(`.history-item[data-session-id="${s.session_id}"]`);
+    if(!item) return;
+    const titleSpan = item.querySelector(".session-title");
+    const oldText = s.title || "New Chat";
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "rename-input";
+    input.value = oldText;
+    input.maxLength = 60;
+
+    titleSpan.replaceWith(input);
+    input.focus();
+    input.select();
+
+    const commit = async () => {
+        const newTitle = input.value.trim();
+        if(newTitle && newTitle !== oldText){
+            await fetch(`/sessions/${s.session_id}/rename`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({title: newTitle})
+            });
+        }
+        loadSessions();
+    };
+
+    input.addEventListener("keydown", (e) => {
+        e.stopPropagation();
+        if(e.key === "Enter"){ input.blur(); }
+        if(e.key === "Escape"){ loadSessions(); }
+    });
+    input.addEventListener("click", (e) => e.stopPropagation());
+    input.addEventListener("blur", commit);
+}
+
+async function shareSession(sessionId){
+    try{
+        const resp = await fetch(`/sessions/${sessionId}/share`, {method: "POST"});
+        const data = await resp.json();
+        if(data.status !== "ok"){
+            alert("Could not create share link.");
+            return;
+        }
+        const fullUrl = window.location.origin + data.share_url;
+        showShareModal(fullUrl);
+    }catch(e){
+        console.log(e);
+        alert("Could not create share link.");
+    }
+}
+
+function showShareModal(url){
+    const overlay = document.createElement("div");
+    overlay.className = "share-modal-overlay";
+    overlay.onclick = (e) => { if(e.target === overlay) overlay.remove(); };
+
+    overlay.innerHTML = `
+        <div class="share-modal">
+            <h3>🔗 Anyone with this link can view this chat (read-only)</h3>
+            <div class="link-row">
+                <input type="text" readonly value="${url}" id="shareLinkInput">
+                <button class="copy-btn" id="copyShareLinkBtn">Copy</button>
+            </div>
+            <button class="close-btn" id="closeShareModalBtn">Close</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const input = overlay.querySelector("#shareLinkInput");
+    overlay.querySelector("#copyShareLinkBtn").onclick = async () => {
+        try{
+            await navigator.clipboard.writeText(url);
+        }catch(e){
+            input.select();
+            document.execCommand("copy");
+        }
+        const btn = overlay.querySelector("#copyShareLinkBtn");
+        btn.innerText = "Copied!";
+        setTimeout(()=>{ btn.innerText = "Copy"; }, 1500);
+    };
+    overlay.querySelector("#closeShareModalBtn").onclick = () => overlay.remove();
 }
 
 async function switchToSession(sessionId){
@@ -1138,6 +1481,85 @@ async function loadHistoryFallback(){
 }
 
 // =========================
+// WORKING INDICATOR + CLARIFYING QUESTION CARD
+// =========================
+function setWorkingStatus(bubbleEl, text){
+    bubbleEl.innerHTML = `<div class="working-indicator"><span class="working-spinner"></span><span class="working-text"></span></div>`;
+    const t = bubbleEl.querySelector(".working-text");
+    if(t) t.textContent = text;
+}
+
+function renderClarifyCard(bubbleEl, clarifyObj){
+    bubbleEl.innerHTML = "";
+    const card = document.createElement("div");
+    card.className = "clarify-card";
+
+    const q = document.createElement("div");
+    q.className = "clarify-question";
+    q.textContent = clarifyObj.question || "";
+    card.appendChild(q);
+
+    const disableAll = () => {
+        card.classList.add("clarify-answered");
+        card.querySelectorAll("button, input").forEach(el => el.disabled = true);
+    };
+
+    const answerWith = (text) => {
+        if(!text || !text.trim()) return;
+        disableAll();
+        const inputField = document.getElementById("userInput");
+        inputField.value = text.trim();
+        window.sendMessage();
+    };
+
+    const optsWrap = document.createElement("div");
+    optsWrap.className = "clarify-options";
+    (clarifyObj.options || []).forEach((opt, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "clarify-option";
+        btn.type = "button";
+        const num = document.createElement("span");
+        num.className = "clarify-num";
+        num.textContent = String(idx + 1);
+        const label = document.createElement("span");
+        label.textContent = opt;
+        btn.appendChild(num);
+        btn.appendChild(label);
+        btn.onclick = () => answerWith(opt);
+        optsWrap.appendChild(btn);
+    });
+    card.appendChild(optsWrap);
+
+    const otherRow = document.createElement("div");
+    otherRow.className = "clarify-other-row";
+    const otherInput = document.createElement("input");
+    otherInput.type = "text";
+    otherInput.className = "clarify-other-input";
+    otherInput.placeholder = "Ya khud likhein...";
+    otherInput.onkeydown = (e) => { if(e.key === "Enter") answerWith(otherInput.value); };
+    const otherBtn = document.createElement("button");
+    otherBtn.type = "button";
+    otherBtn.className = "clarify-other-btn";
+    otherBtn.textContent = "Send";
+    otherBtn.onclick = () => answerWith(otherInput.value);
+    otherRow.appendChild(otherInput);
+    otherRow.appendChild(otherBtn);
+    card.appendChild(otherRow);
+
+    const skipRow = document.createElement("div");
+    skipRow.className = "clarify-skip-row";
+    const skipBtn = document.createElement("button");
+    skipBtn.type = "button";
+    skipBtn.className = "clarify-skip-btn";
+    skipBtn.textContent = "Skip — apna best judgement use karo";
+    skipBtn.onclick = () => answerWith("Koi specific preference nahi hai, aap apne best judgement se decide kar lo.");
+    skipRow.appendChild(skipBtn);
+    card.appendChild(skipRow);
+
+    bubbleEl.appendChild(card);
+}
+
+// =========================
 // SEND MESSAGE
 // =========================
 window.sendMessage = async function(){
@@ -1152,10 +1574,10 @@ window.sendMessage = async function(){
     _lastMsg = userText;
     hideWelcomeScreen();
     const chatContent = document.getElementById("chatContent");
-    const imageToSend = uploadedImageBase64;
-    const fileToSend = uploadedFileData;
-    _lastImg = imageToSend;
-    _lastFile = fileToSend;
+    const imagesToSend = [...(uploadedImagesBase64 || [])];
+    const filesToSend = [...(uploadedFilesData || [])];
+    _lastImgs = imagesToSend;
+    _lastFiles = filesToSend;
 
     // Agent badge
     let agentBadgeEl = null;
@@ -1176,18 +1598,23 @@ window.sendMessage = async function(){
     <div class="bubble"></div>`;
     const userBubbleEl = userMsg.querySelector(".bubble");
     userBubbleEl.appendChild(document.createTextNode(userText));
-    if(fileToSend){
-        const fileInd = document.createElement("div");
-        fileInd.style.cssText = "margin-top:6px;font-size:12px;opacity:0.85;font-weight:500;";
-        fileInd.textContent = `📎 ${fileToSend.name}`;
-        userBubbleEl.appendChild(fileInd);
+    if(filesToSend.length > 0){
+        filesToSend.forEach(f => {
+            const fileInd = document.createElement("div");
+            fileInd.style.cssText = "margin-top:4px;font-size:12px;opacity:0.85;font-weight:500;";
+            fileInd.textContent = `📎 ${f.name}`;
+            userBubbleEl.appendChild(fileInd);
+        });
     }
-    if(imageToSend){
+    if(imagesToSend.length > 0){
         userBubbleEl.appendChild(document.createElement("br"));
-        const imgEl = document.createElement("img");
-        imgEl.src = imageToSend;
-        imgEl.className = "uploaded-img-preview";
-        userBubbleEl.appendChild(imgEl);
+        imagesToSend.forEach(img => {
+            const imgEl = document.createElement("img");
+            imgEl.src = img;
+            imgEl.className = "uploaded-img-preview";
+            imgEl.style.marginRight = "8px";
+            userBubbleEl.appendChild(imgEl);
+        });
     }
     chatContent.appendChild(userMsg);
 
@@ -1212,162 +1639,160 @@ window.sendMessage = async function(){
 
     const getBubble = () => document.getElementById(bubbleID);
 
-    // ── Agent mode ──
-    if(window.agentMode && !imageToSend){
+    // ── Shared SSE streaming handler (Codex-style progress + clarify cards +
+    // live token rendering) — used by Agent mode, Auto-Run Code mode, and
+    // normal chat alike, so ALL modes get the working indicator and clarify
+    // cards, not just the plain default path.
+    async function runChatStream(payload, badgeEl){
         try{
             const resp = await fetch("/chat", {
                 method:"POST",
                 headers:{"Content-Type":"application/json"},
-                body: JSON.stringify({
-                    message: userText,
-                    uid: currentUID || "anonymous",
-                    image_data: null,
-                    file_data: fileToSend || null,
-                    agent: true,
-                    stream: false,
-                    mode: currentMode,
-                    web_search: webSearchEnabled
-                })
+                body: JSON.stringify(Object.assign({}, payload, {stream: true}))
             });
-            const data = await resp.json();
+
+            const reader = resp.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let fullReply = "";
+            let clarifyReceived = false;
             const bubble = getBubble();
-            if(bubble) bubble.innerHTML = marked.parse(data.reply);
-            if(agentBadgeEl) agentBadgeEl.remove();
-            addVoiceBtn(aiMsg, data.reply);
-            addCodeBlockButtons();
-            if(bubble){
-                renderEnhancements(bubble);
-                addMsgActions(aiMsg, userText, data.reply);
+            if(bubble) bubble.innerHTML = "";
+
+            while(true){
+                const { done, value } = await reader.read();
+                if(done) break;
+
+                const lines = decoder.decode(value, {stream: true}).split("\n");
+                for(const line of lines){
+                    if(!line.startsWith("data: ")) continue;
+                    try{
+                        const parsed = JSON.parse(line.slice(6));
+                        if(parsed.progress){
+                            // Codex-style live "working..." status during multi-step
+                            // work (e.g. big-file chunked review, agent steps,
+                            // auto-run code/fix loop)
+                            const b = getBubble();
+                            if(b){
+                                setWorkingStatus(b, parsed.progress);
+                                scrollChatToBottom();
+                            }
+                        }
+                        if(parsed.clarify){
+                            // AI wants more info before answering — show clickable
+                            // question card instead of a plain reply
+                            clarifyReceived = true;
+                            const b = getBubble();
+                            if(b){
+                                renderClarifyCard(b, parsed.clarify);
+                                scrollChatToBottom();
+                            }
+                        }
+                        if(parsed.token){
+                            fullReply += parsed.token;
+                            const b = getBubble();
+                            if(b){
+                                b.innerHTML = marked.parse(fullReply);
+                                scrollChatToBottom();
+                            }
+                        }
+                        if(parsed.done){
+                            if(badgeEl) badgeEl.remove();
+                            if(clarifyReceived){
+                                // Clarify card is already rendered fully — just
+                                // refresh the sidebar, don't touch the card's DOM.
+                                loadSessions();
+                            }else{
+                                const b = getBubble();
+                                if(b && window.MathJax){
+                                    await MathJax.typesetPromise([b]);
+                                }
+                                addVoiceBtn(aiMsg, fullReply);
+                                addCodeBlockButtons();
+                                const b2 = getBubble();
+                                if(b2){
+                                    renderEnhancements(b2);
+                                    addMsgActions(aiMsg, userText, fullReply);
+                                }
+                                await saveChatToFirebase(userText, fullReply);
+                                loadSessions();
+                            }
+                        }
+                        if(parsed.error){
+                            const b = getBubble();
+                            if(b) b.innerHTML = `❌ Error: ${parsed.error}`;
+                            if(badgeEl) badgeEl.remove();
+                        }
+                    }catch(e){}
+                }
             }
-            if(window.MathJax && bubble){
-                MathJax.typesetPromise([bubble]).catch(e=>console.log(e));
-            }
-            await saveChatToFirebase(userText, data.reply);
-            loadSessions();
-        }catch(e){
-            const bubble = getBubble();
-            if(bubble) bubble.innerHTML = "❌ Error. Try again.";
+        }catch(error){
+            console.log(error);
+            const b = getBubble();
+            if(b) b.innerHTML = "❌ Connection Error. Please try again.";
+            if(badgeEl) badgeEl.remove();
         }
+    }
+
+    // ── Agent mode ──
+    if(window.agentMode && imagesToSend.length === 0){
+        await runChatStream({
+            message: userText,
+            uid: currentUID || "anonymous",
+            image_data: null,
+            file_data: filesToSend.length > 0 ? {
+                name: filesToSend.map(f => f.name).join(", "),
+                type: filesToSend.map(f => f.type).join(", "),
+                content: filesToSend.map(f => `=== ${f.name} ===\n${f.content}`).join("\n\n")
+            } : null,
+            agent: true,
+            mode: currentMode,
+            web_search: webSearchEnabled
+        }, agentBadgeEl);
         scrollChatToBottom();
         isSending = false;
         return;
     }
 
     // ── Auto-Run Code mode: AI likhta hai, khud run karta hai, error par khud fix karta hai ──
-    if(autoRunEnabled && !imageToSend){
+    if(autoRunEnabled && imagesToSend.length === 0){
         let runBadgeEl = document.createElement("div");
         runBadgeEl.className = "agent-badge";
         runBadgeEl.textContent = "⚙️ Auto-Run — code likh kar khud test kiya ja raha hai...";
         chatContent.insertBefore(runBadgeEl, aiMsg);
         scrollChatToBottom();
-        try{
-            const resp = await fetch("/chat", {
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body: JSON.stringify({
-                    message: userText,
-                    uid: currentUID || "anonymous",
-                    image_data: null,
-                    file_data: fileToSend || null,
-                    agent: false,
-                    auto_execute: true,
-                    stream: false,
-                    mode: currentMode,
-                    web_search: webSearchEnabled
-                })
-            });
-            const data = await resp.json();
-            const bubble = getBubble();
-            if(bubble) bubble.innerHTML = marked.parse(data.reply);
-            runBadgeEl.remove();
-            addVoiceBtn(aiMsg, data.reply);
-            addCodeBlockButtons();
-            if(bubble){
-                renderEnhancements(bubble);
-                addMsgActions(aiMsg, userText, data.reply);
-            }
-            if(window.MathJax && bubble){
-                MathJax.typesetPromise([bubble]).catch(e=>console.log(e));
-            }
-            await saveChatToFirebase(userText, data.reply);
-            loadSessions();
-        }catch(e){
-            const bubble = getBubble();
-            if(bubble) bubble.innerHTML = "❌ Error. Try again.";
-            runBadgeEl.remove();
-        }
+        await runChatStream({
+            message: userText,
+            uid: currentUID || "anonymous",
+            image_data: null,
+            file_data: filesToSend.length > 0 ? {
+                name: filesToSend.map(f => f.name).join(", "),
+                type: filesToSend.map(f => f.type).join(", "),
+                content: filesToSend.map(f => `=== ${f.name} ===\n${f.content}`).join("\n\n")
+            } : null,
+            agent: false,
+            auto_execute: true,
+            mode: currentMode,
+            web_search: webSearchEnabled
+        }, runBadgeEl);
         scrollChatToBottom();
         isSending = false;
         return;
     }
 
-    // ── Streaming mode ──
-    try{
-        const resp = await fetch("/chat", {
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body: JSON.stringify({
-                message: userText,
-                uid: currentUID || "anonymous",
-                image_data: imageToSend || null,
-                file_data: fileToSend || null,
-                agent: false,
-                stream: true,
-                mode: currentMode,
-                web_search: webSearchEnabled
-            })
-        });
-
-        const reader = resp.body.getReader();
-        const decoder = new TextDecoder("utf-8");
-        let fullReply = "";
-        const bubble = getBubble();
-        if(bubble) bubble.innerHTML = "";
-
-        while(true){
-            const { done, value } = await reader.read();
-            if(done) break;
-
-            const lines = decoder.decode(value, {stream: true}).split("\n");
-            for(const line of lines){
-                if(!line.startsWith("data: ")) continue;
-                try{
-                    const parsed = JSON.parse(line.slice(6));
-                    if(parsed.token){
-                        fullReply += parsed.token;
-                        const b = getBubble();
-                        if(b){
-                            b.innerHTML = marked.parse(fullReply);
-                            scrollChatToBottom();
-                        }
-                    }
-                    if(parsed.done){
-                        const b = getBubble();
-                        if(b && window.MathJax){
-                            await MathJax.typesetPromise([b]);
-                        }
-                        addVoiceBtn(aiMsg, fullReply);
-                        addCodeBlockButtons();
-                        const b2 = getBubble();
-                        if(b2){
-                            renderEnhancements(b2);
-                            addMsgActions(aiMsg, userText, fullReply);
-                        }
-                        await saveChatToFirebase(userText, fullReply);
-                        loadSessions();
-                    }
-                    if(parsed.error){
-                        const b = getBubble();
-                        if(b) b.innerHTML = `❌ Error: ${parsed.error}`;
-                    }
-                }catch(e){}
-            }
-        }
-    }catch(error){
-        console.log(error);
-        const b = getBubble();
-        if(b) b.innerHTML = "❌ Connection Error. Please try again.";
-    }
+    // ── Normal streaming chat mode ──
+    await runChatStream({
+        message: userText,
+        uid: currentUID || "anonymous",
+        image_data: imagesToSend[0] || null,
+        file_data: filesToSend.length > 0 ? {
+            name: filesToSend.map(f => f.name).join(", "),
+            type: filesToSend.map(f => f.type).join(", "),
+            content: filesToSend.map(f => `=== ${f.name} ===\n${f.content}`).join("\n\n")
+        } : null,
+        agent: false,
+        mode: currentMode,
+        web_search: webSearchEnabled
+    }, null);
 
     scrollChatToBottom();
     isSending = false;
@@ -1469,30 +1894,62 @@ function addVoiceBtn(msgEl, text){
 // Same ➕ button now accepts both; we decide by MIME type / extension.
 // =========================
 window.handleAttachUpload = function(event){
-    const file = event.target.files[0];
-    if(!file) return;
+    const files = Array.from(event.target.files);
+    if(files.length === 0) return;
 
-    const isImage = file.type.startsWith("image/");
-    if(isImage){
-        handleImageUpload(file);
-    }else{
-        handleFileUpload(file);
+    // Limit to 6 files max
+    const filesToProcess = files.slice(0, 6);
+    if(files.length > 6){
+        showToast("⚠️ Max 6 files allowed. Only first 6 will be uploaded.");
     }
+
+    filesToProcess.forEach(file => {
+        const isImage = file.type.startsWith("image/");
+        if(isImage){
+            handleImageUpload(file);
+        }else{
+            handleFileUpload(file);
+        }
+    });
 };
+
+// Array to store multiple uploaded images
+window.uploadedImagesBase64 = window.uploadedImagesBase64 || [];
 
 function handleImageUpload(file){
     const reader = new FileReader();
     reader.onload = function(e){
-        uploadedImageBase64 = e.target.result;
-        document.getElementById("imgThumbWrap").innerHTML =
-            `<img src="${e.target.result}" class="img-thumb">`;
+        uploadedImagesBase64.push(e.target.result);
+        renderImageThumbs();
     };
     reader.readAsDataURL(file);
 }
 
+function renderImageThumbs(){
+    const wrap = document.getElementById("imgThumbWrap");
+    wrap.innerHTML = uploadedImagesBase64.map((img, idx) => 
+        `<img src="${img}" class="img-thumb" style="margin-right:4px;cursor:pointer;" onclick="removeImage(${idx})" title="Click to remove">`
+    ).join('');
+}
+
+window.removeImage = function(idx){
+    uploadedImagesBase64.splice(idx, 1);
+    renderImageThumbs();
+};
+
+// Array to store multiple uploaded files
+window.uploadedFilesData = window.uploadedFilesData || [];
+
 async function handleFileUpload(file){
-    document.getElementById("fileThumbWrap").innerHTML =
-        `<span class="file-badge" title="Uploading...">⏳ ${file.name}</span>`;
+    const wrap = document.getElementById("fileThumbWrap");
+    const uploadingId = 'uploading-' + Date.now() + Math.random().toString(36).slice(2);
+
+    const uploadingBadge = document.createElement("span");
+    uploadingBadge.className = "file-badge";
+    uploadingBadge.id = uploadingId;
+    uploadingBadge.title = "Uploading...";
+    uploadingBadge.innerHTML = `⏳ ${file.name}`;
+    wrap.appendChild(uploadingBadge);
 
     const formData = new FormData();
     formData.append("file", file);
@@ -1500,32 +1957,50 @@ async function handleFileUpload(file){
     try{
         const resp = await fetch("/upload_file", {method: "POST", body: formData});
         const data = await resp.json();
+
+        // Remove uploading badge
+        const badge = document.getElementById(uploadingId);
+        if(badge) badge.remove();
+
         if(data.error){
             showToast("❌ " + data.error);
-            clearFilePreview();
             return;
         }
-        uploadedFileData = {
+
+        const fileData = {
             name: data.filename || file.name,
             type: data.file_type,
             content: data.extracted_text
         };
-        document.getElementById("fileThumbWrap").innerHTML =
-            `<span class="file-badge" onclick="clearFilePreview()" title="Click to remove">📄 ${uploadedFileData.name} ✕</span>`;
+        uploadedFilesData.push(fileData);
+        renderFileThumbs();
     }catch(e){
-        showToast("❌ File upload failed");
-        clearFilePreview();
+        const badge = document.getElementById(uploadingId);
+        if(badge) badge.remove();
+        showToast("❌ File upload failed: " + file.name);
     }
+}
+
+function renderFileThumbs(){
+    const wrap = document.getElementById("fileThumbWrap");
+    wrap.innerHTML = uploadedFilesData.map((f, idx) => 
+        `<span class="file-badge" onclick="removeFile(${idx})" title="Click to remove">📄 ${f.name} ✕</span>`
+    ).join('');
+}
+
+window.removeFile = function(idx){
+    uploadedFilesData.splice(idx, 1);
+    renderFileThumbs();
 };
 
 function clearFilePreview(){
-    uploadedFileData = null;
+    uploadedFilesData = [];
     document.getElementById("fileThumbWrap").innerHTML = "";
     document.getElementById("attachUpload").value = "";
 }
 
 function clearImgPreview(){
-    uploadedImageBase64 = null;
+    uploadedImagesBase64 = [];
     document.getElementById("imgThumbWrap").innerHTML = "";
     document.getElementById("attachUpload").value = "";
 }
@@ -1731,8 +2206,8 @@ let currentMode = "default";
 let webSearchEnabled = false;
 let autoRunEnabled = false;
 let _lastMsg = "";
-let _lastImg = null;
-let _lastFile = null;
+let _lastImgs = [];
+let _lastFiles = [];
 
 window.setMode = function(mode){
     currentMode = mode;
@@ -1889,14 +2364,12 @@ function showToast(msg){
 // RETRY
 // =======================
 window.retryLast = async function(){
-    if(!_lastMsg && !_lastImg && !_lastFile) return;
+    if(!_lastMsg && _lastImgs.length === 0 && _lastFiles.length === 0) return;
     document.getElementById("userInput").value = _lastMsg;
-    uploadedImageBase64 = _lastImg;
-    uploadedFileData = _lastFile;
-    if(_lastFile){
-        document.getElementById("fileThumbWrap").innerHTML =
-            `<span class="file-badge" onclick="clearFilePreview()" title="Click to remove">📄 ${_lastFile.name} ✕</span>`;
-    }
+    uploadedImagesBase64 = [..._lastImgs];
+    uploadedFilesData = [..._lastFiles];
+    renderImageThumbs();
+    renderFileThumbs();
     await sendMessage();
 };
 
