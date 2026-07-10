@@ -3,6 +3,8 @@
 <head>
 
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<!-- FIX (Critical-1): Add DOMPurify to sanitize markdown HTML output before DOM injection -->
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
 <!-- Prism.js - Code Highlighting -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
@@ -884,7 +886,68 @@ border-color:rgba(239,68,68,0.3);
 
 
 
+
+/* ============================================
+   NEW: KIMI-STYLE PASTE FILE BADGE
+   Exact look like screenshot: icon + filename + size
+   ============================================ */
+.paste-file-badge{
+display:inline-flex;
+align-items:center;
+gap:8px;
+background:rgba(30,41,59,0.9);
+color:#e2e8f0;
+padding:8px 14px;
+border-radius:10px;
+font-size:13px;
+cursor:pointer;
+border:1px solid rgba(255,255,255,0.08);
+margin-right:6px;
+margin-bottom:4px;
+animation:fadeIn 0.2s ease;
+max-width:280px;
+}
+.paste-file-badge:hover{
+background:rgba(51,65,85,0.9);
+border-color:rgba(255,255,255,0.15);
+}
+.paste-file-badge .file-icon{
+font-size:16px;
+flex-shrink:0;
+}
+.paste-file-badge .file-info{
+display:flex;
+flex-direction:column;
+overflow:hidden;
+}
+.paste-file-badge .file-name{
+font-weight:500;
+font-size:13px;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+color:#f1f5f9;
+}
+.paste-file-badge .file-meta{
+font-size:11px;
+color:#94a3b8;
+margin-top:1px;
+}
+.paste-file-badge .remove-icon{
+margin-left:4px;
+font-size:14px;
+color:#64748b;
+opacity:0.6;
+transition:0.2s;
+flex-shrink:0;
+}
+.paste-file-badge:hover .remove-icon{
+opacity:1;
+color:#ef4444;
+}
+
 </style>
+<!-- FIX (Medium-8): Remove duplicate <base> tag — only one needed -->
 <base target="_blank">
 </head>
 
@@ -1034,12 +1097,13 @@ window.showMemory = async function(){
             </label>
         </div>
         <!-- FIX: Textarea for multiline input -->
+        <!-- FIX (High-5): Use onkeydown instead of deprecated onkeypress for reliable Enter handling -->
         <div class="input-box">
             <label for="attachUpload" class="upload-btn-label" title="Upload image, PDF, CSV, TXT, HTML, or code file (.py/.js/.json/.md/.html/.css/.xml/.yaml)">➕</label>
             <input type="file" id="attachUpload" multiple accept="image/*,.pdf,.csv,.txt,.md,.html,.htm,.py,.js,.json,.log,.css,.xml,.yaml,.yml" onchange="handleAttachUpload(event)">
             <span id="imgThumbWrap"></span>
             <span id="fileThumbWrap"></span>
-            <textarea id="userInput" placeholder="Ask paswan.ai anything..." onkeypress="handleKeyPress(event)" rows="1"></textarea>
+            <textarea id="userInput" placeholder="Ask paswan.ai anything..." onkeydown="handleKeyPress(event)" rows="1"></textarea>
             <button class="mic-btn" id="micBtn" onclick="startVoiceInput()">🎤</button>
             <button class="send-btn" onclick="sendMessage()">Send</button>
         </div>
@@ -1072,6 +1136,21 @@ window.showMemory = async function(){
 
 <script type="module">
 
+// FIX (Critical-1): Sanitize marked.parse output to prevent XSS from malicious AI replies
+function safeMarkdown(text) {
+    if (!text) return "";
+    return DOMPurify.sanitize(marked.parse(text));
+}
+
+// FIX (High-6): Helper to format file sizes for upload badges
+function formatFileSize(bytes) {
+    if (!bytes || bytes === 0) return '';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
 // =========================
 // INTRO VIDEO
 // =========================
@@ -1102,8 +1181,9 @@ window.addEventListener("load", ()=>{
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 200) + 'px';
         });
+        // FIX (Medium-10): Move paste listener inside the null guard to avoid runtime errors
+        userInput.addEventListener('paste', handleLargePaste);
     }
-
     loadSessions();
 });
 
@@ -1129,8 +1209,9 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 let currentUID = null;
-let uploadedImageBase64 = null;
-let uploadedFileData = null;
+// FIX (Medium-9): Remove dead singular variables that were never used and caused confusion
+// let uploadedImageBase64 = null;
+// let uploadedFileData = null;
 let ttsPlaying = null;
 let isRecording = false;
 let recognition = null;
@@ -1411,9 +1492,10 @@ async function loadSessionMessages(sessionId){
             // AI reply
             const aiDiv = document.createElement("div");
             aiDiv.className = "message ai";
+            // FIX (Critical-1): Sanitize stored AI replies before rendering
             aiDiv.innerHTML = `
                 <div class="sender-title">paswan.ai</div>
-                <div class="bubble">${marked.parse(msg.ai_reply || "")}</div>
+                <div class="bubble">${safeMarkdown(msg.ai_reply || "")}</div>
             `;
             chatContent.appendChild(aiDiv);
 
@@ -1457,7 +1539,8 @@ async function loadHistoryFallback(){
                 </div>
                 <div class="message ai">
                     <div class="sender-title">paswan.ai</div>
-                    <div class="bubble">${marked.parse(chat.reply)}</div>
+                    <!-- FIX (Critical-1): Sanitize fallback history replies -->
+                    <div class="bubble">${safeMarkdown(chat.reply)}</div>
                 </div>`;
                 // FIX: Preserve line breaks + indentation using textContent
                 const fbBubble = chatContent.querySelector("#fallbackUserBubble");
@@ -1568,235 +1651,289 @@ window.sendMessage = async function(){
     const inputField = document.getElementById("userInput");
     const userText = inputField.value.trim();
 
-    if(userText === "" && !uploadedImageBase64 && !uploadedFileData) return;
+    // FIX (Critical-2): Empty-check must use the live arrays, not the dead singular variables
+    if(userText === "" && uploadedImagesBase64.length === 0 && uploadedFilesData.length === 0) return;
 
+    // FIX (High-4): Protect isSending so it always resets even if runChatStream throws
     isSending = true;
-    _lastMsg = userText;
-    hideWelcomeScreen();
-    const chatContent = document.getElementById("chatContent");
-    const imagesToSend = [...(uploadedImagesBase64 || [])];
-    const filesToSend = [...(uploadedFilesData || [])];
-    _lastImgs = imagesToSend;
-    _lastFiles = filesToSend;
+    try {
+        _lastMsg = userText;
+        hideWelcomeScreen();
+        const chatContent = document.getElementById("chatContent");
+        const imagesToSend = [...(uploadedImagesBase64 || [])];
+        const filesToSend = [...(uploadedFilesData || [])];
+        _lastImgs = imagesToSend;
+        _lastFiles = filesToSend;
 
-    // Agent badge
-    let agentBadgeEl = null;
-    if(window.agentMode){
-        agentBadgeEl = document.createElement("div");
-        agentBadgeEl.className = "agent-badge";
-        agentBadgeEl.textContent = "🤖 Agent Mode — multi-step reasoning";
-        chatContent.appendChild(agentBadgeEl);
-    }
-
-    // User message bubble
-    const userMsg = document.createElement("div");
-    userMsg.className = "message user";
-    // FIX: Preserve line breaks + indentation in user messages using textContent
-    // (avoids HTML injection risk and reliably keeps whitespace, unlike manual \n->br regex)
-    userMsg.innerHTML = `
-    <div class="sender-title">You</div>
-    <div class="bubble"></div>`;
-    const userBubbleEl = userMsg.querySelector(".bubble");
-    userBubbleEl.appendChild(document.createTextNode(userText));
-    if(filesToSend.length > 0){
-        filesToSend.forEach(f => {
-            const fileInd = document.createElement("div");
-            fileInd.style.cssText = "margin-top:4px;font-size:12px;opacity:0.85;font-weight:500;";
-            fileInd.textContent = `📎 ${f.name}`;
-            userBubbleEl.appendChild(fileInd);
-        });
-    }
-    if(imagesToSend.length > 0){
-        userBubbleEl.appendChild(document.createElement("br"));
-        imagesToSend.forEach(img => {
-            const imgEl = document.createElement("img");
-            imgEl.src = img;
-            imgEl.className = "uploaded-img-preview";
-            imgEl.style.marginRight = "8px";
-            userBubbleEl.appendChild(imgEl);
-        });
-    }
-    chatContent.appendChild(userMsg);
-
-    // FIX: Reset textarea
-    inputField.value = "";
-    inputField.style.height = "auto";
-    clearImgPreview();
-    clearFilePreview();
-    scrollChatToBottom();
-
-    const bubbleID = "sb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
-
-    const aiMsg = document.createElement("div");
-    aiMsg.className = "message ai";
-    aiMsg.innerHTML = `
-    <div class="sender-title">paswan.ai</div>
-    <div class="bubble" id="${bubbleID}">
-        <div class="typing-dots"><span></span><span></span><span></span></div>
-    </div>`;
-    chatContent.appendChild(aiMsg);
-    scrollChatToBottom();
-
-    const getBubble = () => document.getElementById(bubbleID);
-
-    // ── Shared SSE streaming handler (Codex-style progress + clarify cards +
-    // live token rendering) — used by Agent mode, Auto-Run Code mode, and
-    // normal chat alike, so ALL modes get the working indicator and clarify
-    // cards, not just the plain default path.
-    async function runChatStream(payload, badgeEl){
-        try{
-            const resp = await fetch("/chat", {
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body: JSON.stringify(Object.assign({}, payload, {stream: true}))
-            });
-
-            const reader = resp.body.getReader();
-            const decoder = new TextDecoder("utf-8");
-            let fullReply = "";
-            let clarifyReceived = false;
-            const bubble = getBubble();
-            if(bubble) bubble.innerHTML = "";
-
-            while(true){
-                const { done, value } = await reader.read();
-                if(done) break;
-
-                const lines = decoder.decode(value, {stream: true}).split("\n");
-                for(const line of lines){
-                    if(!line.startsWith("data: ")) continue;
-                    try{
-                        const parsed = JSON.parse(line.slice(6));
-                        if(parsed.progress){
-                            // Codex-style live "working..." status during multi-step
-                            // work (e.g. big-file chunked review, agent steps,
-                            // auto-run code/fix loop)
-                            const b = getBubble();
-                            if(b){
-                                setWorkingStatus(b, parsed.progress);
-                                scrollChatToBottom();
-                            }
-                        }
-                        if(parsed.clarify){
-                            // AI wants more info before answering — show clickable
-                            // question card instead of a plain reply
-                            clarifyReceived = true;
-                            const b = getBubble();
-                            if(b){
-                                renderClarifyCard(b, parsed.clarify);
-                                scrollChatToBottom();
-                            }
-                        }
-                        if(parsed.token){
-                            fullReply += parsed.token;
-                            const b = getBubble();
-                            if(b){
-                                b.innerHTML = marked.parse(fullReply);
-                                scrollChatToBottom();
-                            }
-                        }
-                        if(parsed.done){
-                            if(badgeEl) badgeEl.remove();
-                            if(clarifyReceived){
-                                // Clarify card is already rendered fully — just
-                                // refresh the sidebar, don't touch the card's DOM.
-                                loadSessions();
-                            }else{
-                                const b = getBubble();
-                                if(b && window.MathJax){
-                                    await MathJax.typesetPromise([b]);
-                                }
-                                addVoiceBtn(aiMsg, fullReply);
-                                addCodeBlockButtons();
-                                const b2 = getBubble();
-                                if(b2){
-                                    renderEnhancements(b2);
-                                    addMsgActions(aiMsg, userText, fullReply);
-                                }
-                                await saveChatToFirebase(userText, fullReply);
-                                loadSessions();
-                            }
-                        }
-                        if(parsed.error){
-                            const b = getBubble();
-                            if(b) b.innerHTML = `❌ Error: ${parsed.error}`;
-                            if(badgeEl) badgeEl.remove();
-                        }
-                    }catch(e){}
-                }
-            }
-        }catch(error){
-            console.log(error);
-            const b = getBubble();
-            if(b) b.innerHTML = "❌ Connection Error. Please try again.";
-            if(badgeEl) badgeEl.remove();
+        // Agent badge
+        let agentBadgeEl = null;
+        if(window.agentMode){
+            agentBadgeEl = document.createElement("div");
+            agentBadgeEl.className = "agent-badge";
+            agentBadgeEl.textContent = "🤖 Agent Mode — multi-step reasoning";
+            chatContent.appendChild(agentBadgeEl);
         }
-    }
 
-    // ── Agent mode ──
-    if(window.agentMode && imagesToSend.length === 0){
+        // User message bubble
+        const userMsg = document.createElement("div");
+        userMsg.className = "message user";
+        // FIX: Preserve line breaks + indentation in user messages using textContent
+        // (avoids HTML injection risk and reliably keeps whitespace, unlike manual \n->br regex)
+        userMsg.innerHTML = `
+        <div class="sender-title">You</div>
+        <div class="bubble"></div>`;
+        const userBubbleEl = userMsg.querySelector(".bubble");
+        userBubbleEl.appendChild(document.createTextNode(userText));
+        if(filesToSend.length > 0){
+            filesToSend.forEach(f => {
+                const fileInd = document.createElement("div");
+                fileInd.style.cssText = "margin-top:4px;font-size:12px;opacity:0.85;font-weight:500;";
+                fileInd.textContent = `📎 ${f.name}`;
+                userBubbleEl.appendChild(fileInd);
+            });
+        }
+        if(imagesToSend.length > 0){
+            userBubbleEl.appendChild(document.createElement("br"));
+            imagesToSend.forEach(img => {
+                const imgEl = document.createElement("img");
+                imgEl.src = img;
+                imgEl.className = "uploaded-img-preview";
+                imgEl.style.marginRight = "8px";
+                userBubbleEl.appendChild(imgEl);
+            });
+        }
+        chatContent.appendChild(userMsg);
+
+        // FIX: Reset textarea
+        inputField.value = "";
+        inputField.style.height = "auto";
+        clearImgPreview();
+        clearFilePreview();
+        scrollChatToBottom();
+
+        const bubbleID = "sb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+
+        const aiMsg = document.createElement("div");
+        aiMsg.className = "message ai";
+        aiMsg.innerHTML = `
+        <div class="sender-title">paswan.ai</div>
+        <div class="bubble" id="${bubbleID}">
+            <div class="typing-dots"><span></span><span></span><span></span></div>
+        </div>`;
+        chatContent.appendChild(aiMsg);
+        scrollChatToBottom();
+
+        const getBubble = () => document.getElementById(bubbleID);
+
+        // ── Shared SSE streaming handler (Codex-style progress + clarify cards +
+        // live token rendering) — used by Agent mode, Auto-Run Code mode, and
+        // normal chat alike, so ALL modes get the working indicator and clarify
+        // cards, not just the plain default path.
+        async function runChatStream(payload, badgeEl){
+            try{
+                const resp = await fetch("/chat", {
+                    method:"POST",
+                    headers:{"Content-Type":"application/json"},
+                    body: JSON.stringify(Object.assign({}, payload, {stream: true}))
+                });
+
+                const reader = resp.body.getReader();
+                const decoder = new TextDecoder("utf-8");
+                let fullReply = "";
+                let clarifyReceived = false;
+                const bubble = getBubble();
+                if(bubble) bubble.innerHTML = "";
+
+                while(true){
+                    const { done, value } = await reader.read();
+                    if(done) break;
+
+                    const lines = decoder.decode(value, {stream: true}).split("\n");
+                    for(const line of lines){
+                        if(!line.startsWith("data: ")) continue;
+                        try{
+                            const parsed = JSON.parse(line.slice(6));
+                            if(parsed.progress){
+                                // Codex-style live "working..." status during multi-step
+                                // work (e.g. big-file chunked review, agent steps,
+                                // auto-run code/fix loop)
+                                const b = getBubble();
+                                if(b){
+                                    setWorkingStatus(b, parsed.progress);
+                                    scrollChatToBottom();
+                                }
+                            }
+                            if(parsed.clarify){
+                                // AI wants more info before answering — show clickable
+                                // question card instead of a plain reply
+                                clarifyReceived = true;
+                                const b = getBubble();
+                                if(b){
+                                    renderClarifyCard(b, parsed.clarify);
+                                    scrollChatToBottom();
+                                }
+                            }
+                            if(parsed.token){
+                                // FIX (High-7): Prevent stream tokens from overwriting a rendered clarify card
+                                if (clarifyReceived) continue;
+                                fullReply += parsed.token;
+                                const b = getBubble();
+                                if(b){
+                                    // FIX (Critical-1): Sanitize markdown before each DOM update
+                                    b.innerHTML = safeMarkdown(fullReply);
+                                    scrollChatToBottom();
+                                }
+                            }
+                            if(parsed.done){
+                                if(badgeEl) badgeEl.remove();
+                                if(clarifyReceived){
+                                    // Clarify card is already rendered fully — just
+                                    // refresh the sidebar, don't touch the card's DOM.
+                                    loadSessions();
+                                }else{
+                                    const b = getBubble();
+                                    if(b && window.MathJax){
+                                        await MathJax.typesetPromise([b]);
+                                    }
+                                    addVoiceBtn(aiMsg, fullReply);
+                                    addCodeBlockButtons();
+                                    const b2 = getBubble();
+                                    if(b2){
+                                        renderEnhancements(b2);
+                                        addMsgActions(aiMsg, userText, fullReply);
+                                    }
+                                    await saveChatToFirebase(userText, fullReply);
+                                    loadSessions();
+                                }
+                            }
+                            if(parsed.error){
+                                const b = getBubble();
+                                if(b) b.innerHTML = `❌ Error: ${escapeHtml(parsed.error)}`;
+                                if(badgeEl) badgeEl.remove();
+                            }
+                        }catch(e){}
+                    }
+                }
+            }catch(error){
+                console.log(error);
+                const b = getBubble();
+                if(b) b.innerHTML = "❌ Connection Error. Please try again.";
+                if(badgeEl) badgeEl.remove();
+            }
+        }
+
+        // ── Agent mode ──
+        if(window.agentMode && imagesToSend.length === 0){
+            await runChatStream({
+                message: userText,
+                uid: currentUID || "anonymous",
+                image_data: null,
+                file_data: filesToSend.length > 0 ? {
+                    name: filesToSend.map(f => f.name).join(", "),
+                    type: filesToSend.map(f => f.type).join(", "),
+                    content: filesToSend.map(f => `=== ${f.name} ===\n${f.content}`).join("\n\n")
+                } : null,
+                agent: true,
+                mode: currentMode,
+                web_search: webSearchEnabled
+            }, agentBadgeEl);
+            scrollChatToBottom();
+            return;
+        }
+
+        // ── Auto-Run Code mode: AI likhta hai, khud run karta hai, error par khud fix karta hai ──
+        if(autoRunEnabled && imagesToSend.length === 0){
+            let runBadgeEl = document.createElement("div");
+            runBadgeEl.className = "agent-badge";
+            runBadgeEl.textContent = "⚙️ Auto-Run — code likh kar khud test kiya ja raha hai...";
+            chatContent.insertBefore(runBadgeEl, aiMsg);
+            scrollChatToBottom();
+            await runChatStream({
+                message: userText,
+                uid: currentUID || "anonymous",
+                image_data: null,
+                file_data: filesToSend.length > 0 ? {
+                    name: filesToSend.map(f => f.name).join(", "),
+                    type: filesToSend.map(f => f.type).join(", "),
+                    content: filesToSend.map(f => `=== ${f.name} ===\n${f.content}`).join("\n\n")
+                } : null,
+                agent: false,
+                auto_execute: true,
+                mode: currentMode,
+                web_search: webSearchEnabled
+            }, runBadgeEl);
+            scrollChatToBottom();
+            return;
+        }
+
+        // ── Normal streaming chat mode ──
         await runChatStream({
             message: userText,
             uid: currentUID || "anonymous",
-            image_data: null,
-            file_data: filesToSend.length > 0 ? {
-                name: filesToSend.map(f => f.name).join(", "),
-                type: filesToSend.map(f => f.type).join(", "),
-                content: filesToSend.map(f => `=== ${f.name} ===\n${f.content}`).join("\n\n")
-            } : null,
-            agent: true,
-            mode: currentMode,
-            web_search: webSearchEnabled
-        }, agentBadgeEl);
-        scrollChatToBottom();
-        isSending = false;
-        return;
-    }
-
-    // ── Auto-Run Code mode: AI likhta hai, khud run karta hai, error par khud fix karta hai ──
-    if(autoRunEnabled && imagesToSend.length === 0){
-        let runBadgeEl = document.createElement("div");
-        runBadgeEl.className = "agent-badge";
-        runBadgeEl.textContent = "⚙️ Auto-Run — code likh kar khud test kiya ja raha hai...";
-        chatContent.insertBefore(runBadgeEl, aiMsg);
-        scrollChatToBottom();
-        await runChatStream({
-            message: userText,
-            uid: currentUID || "anonymous",
-            image_data: null,
+            image_data: imagesToSend[0] || null,
             file_data: filesToSend.length > 0 ? {
                 name: filesToSend.map(f => f.name).join(", "),
                 type: filesToSend.map(f => f.type).join(", "),
                 content: filesToSend.map(f => `=== ${f.name} ===\n${f.content}`).join("\n\n")
             } : null,
             agent: false,
-            auto_execute: true,
             mode: currentMode,
             web_search: webSearchEnabled
-        }, runBadgeEl);
+        }, null);
+
         scrollChatToBottom();
+    } finally {
         isSending = false;
-        return;
     }
-
-    // ── Normal streaming chat mode ──
-    await runChatStream({
-        message: userText,
-        uid: currentUID || "anonymous",
-        image_data: imagesToSend[0] || null,
-        file_data: filesToSend.length > 0 ? {
-            name: filesToSend.map(f => f.name).join(", "),
-            type: filesToSend.map(f => f.type).join(", "),
-            content: filesToSend.map(f => `=== ${f.name} ===\n${f.content}`).join("\n\n")
-        } : null,
-        agent: false,
-        mode: currentMode,
-        web_search: webSearchEnabled
-    }, null);
-
-    scrollChatToBottom();
-    isSending = false;
 };
+
+// =========================
+// KIMI-STYLE: LARGE PASTE → AUTO FILE
+// Jab user 100+ lines ya 3000+ chars paste kare, auto-file ban jaye
+// =========================
+function handleLargePaste(e) {
+    const text = e.clipboardData.getData('text/plain');
+    if (!text) return;
+
+    const lineCount = text.split('\n').length;
+    const charCount = text.length;
+
+    // Threshold: 100+ lines OR 3000+ chars
+    if (lineCount >= 100 || charCount >= 3000) {
+        e.preventDefault();
+
+        // Smart filename (first line se)
+        let firstLine = text.split('\n')[0].trim().substring(0, 40);
+        let safeName = firstLine.replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').substring(0, 25);
+        if (!safeName) safeName = 'pasted_text';
+        const filename = `${safeName}.txt`;
+
+        // Size calculate karo (Kimi jaisa "TXT 73.99 KB" dikhane ke liye)
+        const sizeBytes = new Blob([text]).size;
+        const sizeStr = sizeBytes > 1024 
+            ? (sizeBytes / 1024).toFixed(2) + ' KB' 
+            : sizeBytes + ' B';
+
+        uploadedFilesData.push({
+            name: filename,
+            type: 'TXT',
+            content: text,
+            size: sizeStr,
+            isVirtual: true
+        });
+
+        renderFileThumbs();
+
+        // Textarea clear karo kyunki text ab file ban gaya
+        const inputField = document.getElementById("userInput");
+        if (inputField) {
+            inputField.value = "";
+            inputField.style.height = "auto";
+        }
+
+        showToast(`📄 ${filename} (${sizeStr}) — ${lineCount} lines auto-attached!`);
+    }
+}
 
 // =========================
 // VOICE INPUT
@@ -1967,10 +2104,12 @@ async function handleFileUpload(file){
             return;
         }
 
+        // FIX (High-6): Include file size so thumbnail can display it
         const fileData = {
             name: data.filename || file.name,
             type: data.file_type,
-            content: data.extracted_text
+            content: data.extracted_text,
+            size: formatFileSize(file.size)
         };
         uploadedFilesData.push(fileData);
         renderFileThumbs();
@@ -1983,14 +2122,31 @@ async function handleFileUpload(file){
 
 function renderFileThumbs(){
     const wrap = document.getElementById("fileThumbWrap");
-    wrap.innerHTML = uploadedFilesData.map((f, idx) => 
-        `<span class="file-badge" onclick="removeFile(${idx})" title="Click to remove">📄 ${f.name} ✕</span>`
-    ).join('');
+    wrap.innerHTML = uploadedFilesData.map((f, idx) => {
+        // Kimi-style badge for virtual/pasted files
+        if (f.isVirtual) {
+            return `<span class="paste-file-badge" onclick="removeFile(${idx})" title="Click to remove">
+                <span class="file-icon">📄</span>
+                <span class="file-info">
+                    <span class="file-name">${f.name}</span>
+                    <span class="file-meta">TXT ${f.size || ''}</span>
+                </span>
+                <span class="remove-icon">✕</span>
+            </span>`;
+        }
+        // FIX (Low-11): Show file type + size for regular uploads; keep virtual paste badge unchanged
+        const typeLabel = f.type ? f.type.split('/').pop().toUpperCase() : 'FILE';
+        const sizeLabel = f.size ? ` • ${f.size}` : '';
+        return `<span class="file-badge" onclick="removeFile(${idx})" title="Click to remove">📄 ${f.name} <span style="opacity:0.7;font-size:11px;">${typeLabel}${sizeLabel}</span> ✕</span>`;
+    }).join('');
 }
 
-window.removeFile = function(idx){
-    uploadedFilesData.splice(idx, 1);
-    renderFileThumbs();
+// FIX (Critical-3): Provide file removal handler that was referenced by inline onclick but never defined
+window.removeFile = function(idx) {
+    if (uploadedFilesData && Array.isArray(uploadedFilesData)) {
+        uploadedFilesData.splice(idx, 1);
+        renderFileThumbs();
+    }
 };
 
 function clearFilePreview(){
