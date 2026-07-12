@@ -583,10 +583,66 @@ def extract_urls(text):
             out.append(u)
     return out
 
-def fetch_url_content(url, max_chars=4000, timeout=8):
+def _parse_html_to_text(html_text):
+    """Shared HTML -> (title, description, text) extraction — used both for
+    real network fetches and for reading our own template straight off disk."""
+    title, description = "", ""
+    if BeautifulSoup is not None:
+        soup = BeautifulSoup(html_text, "html.parser")
+        for tag in soup(["script", "style", "noscript"]):
+            tag.decompose()
+        if soup.title and soup.title.string:
+            title = soup.title.string.strip()
+        desc_tag = (soup.find("meta", attrs={"name": "description"})
+                    or soup.find("meta", attrs={"property": "og:description"}))
+        if desc_tag and desc_tag.get("content"):
+            description = desc_tag["content"].strip()
+        raw_text = soup.get_text(separator="\n")
+    else:
+        # Fallback if beautifulsoup4 isn't installed — crude regex strip
+        m = re.search(r"<title[^>]*>(.*?)</title>", html_text, re.IGNORECASE | re.DOTALL)
+        if m:
+            title = re.sub(r"\s+", " ", m.group(1)).strip()
+        raw_text = re.sub(r"<script.*?</script>|<style.*?</style>", " ", html_text, flags=re.IGNORECASE | re.DOTALL)
+        raw_text = re.sub(r"<[^>]+>", "\n", raw_text)
+
+    lines = [ln.strip() for ln in raw_text.splitlines() if ln.strip()]
+    return title, description, "\n".join(lines)
+
+LOOPBACK_HOSTS = {"localhost", "127.0.0.1", "0.0.0.0"}
+
+def fetch_url_content(url, max_chars=4000, timeout=8, self_host=None):
     """Fetches a URL and extracts its visible text/title/description.
     Returns {"error": "..."} on failure instead of raising, so callers
-    can fall back to a normal search instead of crashing the request."""
+    can fall back to a normal search instead of crashing the request.
+
+    self_host (pass request.host from the view): if the URL points back at
+    THIS app, we read templates/index.html off disk instead of making a real
+    HTTP call. Reason — on a single sync gunicorn worker, that worker is busy
+    handling the current /chat request, so an outbound HTTP call back to
+    itself has no free worker to answer it and just hangs until it times out.
+    Reading the file directly sidesteps that entirely, and is instant."""
+    parsed = urllib.parse.urlparse(url)
+    target_host = (parsed.hostname or "").lower()
+    current_host = (self_host or "").split(":")[0].lower()
+    is_self = bool(target_host) and (
+        target_host == current_host
+        or (target_host in LOOPBACK_HOSTS and current_host in LOOPBACK_HOSTS)
+    )
+
+    if is_self:
+        try:
+            template_path = os.path.join(app.root_path, "templates", "index.html")
+            with open(template_path, "r", encoding="utf-8") as f:
+                html_text = f.read()
+        except Exception as e:
+            return {"error": f"Couldn't read local page ({friendly_error(e)})"}
+        title, description, text = _parse_html_to_text(html_text)
+        if len(text) > max_chars:
+            text = text[:max_chars] + "...[truncated]"
+        domain = parsed.netloc or self_host or target_host
+        return {"url": url, "domain": domain, "title": title, "description": description, "text": text}
+
     headers = {
         "User-Agent": "Mozilla/5.0 (compatible; paswan.ai/1.0; +https://paswan-ai-v2.onrender.com)",
         "Accept": "text/html,application/xhtml+xml"
@@ -604,29 +660,7 @@ def fetch_url_content(url, max_chars=4000, timeout=8):
         return {"error": f"URL isn't an HTML page (content-type: {content_type or 'unknown'})"}
 
     domain = urllib.parse.urlparse(resp.url).netloc
-    title, description = "", ""
-
-    if BeautifulSoup is not None:
-        soup = BeautifulSoup(resp.text, "html.parser")
-        for tag in soup(["script", "style", "noscript"]):
-            tag.decompose()
-        if soup.title and soup.title.string:
-            title = soup.title.string.strip()
-        desc_tag = (soup.find("meta", attrs={"name": "description"})
-                    or soup.find("meta", attrs={"property": "og:description"}))
-        if desc_tag and desc_tag.get("content"):
-            description = desc_tag["content"].strip()
-        raw_text = soup.get_text(separator="\n")
-    else:
-        # Fallback if beautifulsoup4 isn't installed — crude regex strip
-        m = re.search(r"<title[^>]*>(.*?)</title>", resp.text, re.IGNORECASE | re.DOTALL)
-        if m:
-            title = re.sub(r"\s+", " ", m.group(1)).strip()
-        raw_text = re.sub(r"<script.*?</script>|<style.*?</style>", " ", resp.text, flags=re.IGNORECASE | re.DOTALL)
-        raw_text = re.sub(r"<[^>]+>", "\n", raw_text)
-
-    lines = [ln.strip() for ln in raw_text.splitlines() if ln.strip()]
-    text = "\n".join(lines)
+    title, description, text = _parse_html_to_text(resp.text)
     if len(text) > max_chars:
         text = text[:max_chars] + "...[truncated]"
 
@@ -643,6 +677,8 @@ def format_fetched_page(page):
         parts.append(f"Meta Description: {page['description']}")
     parts.append(f"\nVisible Page Content:\n{page['text']}")
     return "\n".join(parts)
+
+
 
 # ==================================================
 # YOUTUBE SUMMARIZER
@@ -1155,7 +1191,7 @@ def chat():
         urls_in_msg = extract_urls(user_msg)
         if urls_in_msg:
             # User pasted a link — actually fetch it instead of just keyword-searching it
-            page = fetch_url_content(urls_in_msg[0])
+            page = fetch_url_content(urls_in_msg[0], self_host=request.host)
             if page and not page.get("error"):
                 search_context = format_fetched_page(page)
                 sys_prompt += (
