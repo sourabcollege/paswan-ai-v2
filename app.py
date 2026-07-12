@@ -11,6 +11,7 @@ import tempfile
 import urllib.request
 import urllib.parse
 import urllib.error
+import requests
 from io import BytesIO
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, session, Response, stream_with_context
@@ -519,36 +520,27 @@ def review_large_file(file_context, file_name, user_msg, sys_prompt):
     return final_reply
 
 # ==================================================
-# WEB SEARCH (DuckDuckGo — No API key needed!)
+# WEB SEARCH (DuckDuckGo — Reliable via duckduckgo-search)
 # ==================================================
+try:
+    from duckduckgo_search import DDGS
+except ImportError:
+    DDGS = None
+
 def web_search(query, max_results=5):
+    if DDGS is None:
+        print("Search error: duckduckgo-search package not installed")
+        return []
     try:
-        encoded = urllib.parse.quote(query)
-        url = f"https://api.duckduckgo.com/?q={encoded}&format=json&no_html=1&skip_disambig=1"
-        req = urllib.request.Request(url, headers={"User-Agent": "paswan.ai/1.0"})
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            data = json.loads(resp.read().decode())
-
         results = []
-
-        # Abstract result
-        if data.get("Abstract"):
-            results.append({
-                "title": data.get("Heading", "Result"),
-                "snippet": data["Abstract"],
-                "url": data.get("AbstractURL", "")
-            })
-
-        # Related topics
-        for topic in data.get("RelatedTopics", [])[:max_results]:
-            if isinstance(topic, dict) and topic.get("Text"):
+        with DDGS() as ddgs:
+            for r in ddgs.text(query, max_results=max_results):
                 results.append({
-                    "title": topic.get("FirstURL", "").split("/")[-1].replace("_", " "),
-                    "snippet": topic["Text"],
-                    "url": topic.get("FirstURL", "")
+                    "title": r["title"],
+                    "snippet": r["body"],
+                    "url": r["href"]
                 })
-
-        return results[:max_results]
+        return results
     except Exception as e:
         print("Search error:", e)
         return []
@@ -564,6 +556,93 @@ def format_search_results(results, query):
             text += f"Source: {r['url']}\n"
         text += "\n"
     return text
+
+# ==================================================
+# URL FETCH — actually opens a link the user pastes
+# (DDG text search alone can't answer "check this URL / tell me
+# about this website" — that needs a real HTTP fetch of the page)
+# ==================================================
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    BeautifulSoup = None
+
+URL_REGEX = re.compile(r'https?://[^\s<>"\')]+', re.IGNORECASE)
+
+def extract_urls(text):
+    """Pull URLs out of a user message, stripping trailing punctuation
+    that isn't actually part of the link."""
+    if not text:
+        return []
+    found = URL_REGEX.findall(text)
+    cleaned = [u.rstrip('.,!?;:)"\'') for u in found]
+    seen, out = set(), []
+    for u in cleaned:
+        if u not in seen:
+            seen.add(u)
+            out.append(u)
+    return out
+
+def fetch_url_content(url, max_chars=4000, timeout=8):
+    """Fetches a URL and extracts its visible text/title/description.
+    Returns {"error": "..."} on failure instead of raising, so callers
+    can fall back to a normal search instead of crashing the request."""
+    headers = {
+        "User-Agent": "Mozilla/5.0 (compatible; paswan.ai/1.0; +https://paswan-ai-v2.onrender.com)",
+        "Accept": "text/html,application/xhtml+xml"
+    }
+    try:
+        resp = requests.get(url, headers=headers, timeout=timeout, allow_redirects=True)
+    except requests.exceptions.RequestException as e:
+        return {"error": friendly_error(e)}
+
+    if resp.status_code >= 400:
+        return {"error": f"Site returned HTTP {resp.status_code}"}
+
+    content_type = resp.headers.get("Content-Type", "")
+    if "html" not in content_type and "text" not in content_type:
+        return {"error": f"URL isn't an HTML page (content-type: {content_type or 'unknown'})"}
+
+    domain = urllib.parse.urlparse(resp.url).netloc
+    title, description = "", ""
+
+    if BeautifulSoup is not None:
+        soup = BeautifulSoup(resp.text, "html.parser")
+        for tag in soup(["script", "style", "noscript"]):
+            tag.decompose()
+        if soup.title and soup.title.string:
+            title = soup.title.string.strip()
+        desc_tag = (soup.find("meta", attrs={"name": "description"})
+                    or soup.find("meta", attrs={"property": "og:description"}))
+        if desc_tag and desc_tag.get("content"):
+            description = desc_tag["content"].strip()
+        raw_text = soup.get_text(separator="\n")
+    else:
+        # Fallback if beautifulsoup4 isn't installed — crude regex strip
+        m = re.search(r"<title[^>]*>(.*?)</title>", resp.text, re.IGNORECASE | re.DOTALL)
+        if m:
+            title = re.sub(r"\s+", " ", m.group(1)).strip()
+        raw_text = re.sub(r"<script.*?</script>|<style.*?</style>", " ", resp.text, flags=re.IGNORECASE | re.DOTALL)
+        raw_text = re.sub(r"<[^>]+>", "\n", raw_text)
+
+    lines = [ln.strip() for ln in raw_text.splitlines() if ln.strip()]
+    text = "\n".join(lines)
+    if len(text) > max_chars:
+        text = text[:max_chars] + "...[truncated]"
+
+    if not text and not title:
+        return {"error": "Page loaded but had no readable text (likely a JS-only page)"}
+
+    return {"url": resp.url, "domain": domain, "title": title, "description": description, "text": text}
+
+def format_fetched_page(page):
+    parts = [f"Fetched URL: {page['url']}", f"Domain: {page['domain']}"]
+    if page.get("title"):
+        parts.append(f"Page Title: {page['title']}")
+    if page.get("description"):
+        parts.append(f"Meta Description: {page['description']}")
+    parts.append(f"\nVisible Page Content:\n{page['text']}")
+    return "\n".join(parts)
 
 # ==================================================
 # YOUTUBE SUMMARIZER
@@ -1073,10 +1152,57 @@ def chat():
     # Web search
     search_context = ""
     if web_search_on and user_msg:
-        results = web_search(user_msg)
-        if results:
-            search_context = format_search_results(results, user_msg)
-            sys_prompt += f"\n\nWEB SEARCH RESULTS (use these to answer):\n{search_context}"
+        urls_in_msg = extract_urls(user_msg)
+        if urls_in_msg:
+            # User pasted a link — actually fetch it instead of just keyword-searching it
+            page = fetch_url_content(urls_in_msg[0])
+            if page and not page.get("error"):
+                search_context = format_fetched_page(page)
+                sys_prompt += (
+                    "\n\nYou were just given REAL, LIVE content fetched directly from a URL the user "
+                    "shared (below). You DO have access to it — never say you can't browse the web or "
+                    "can't access links; you just did, successfully.\n\n"
+                    f"{search_context}\n\n"
+                    "How to reply (match Claude AI's browsing style exactly):\n"
+                    f"1. First line only: 'Fetched: {page['domain']}'\n"
+                    "2. Blank line, then exactly: \"Here's what I found at that URL:\"\n"
+                    "3. A short **bold** 1-2 line summary of what the site/page is.\n"
+                    "4. A '**Key details visible on the page:**' heading, then a bullet list (use '*') "
+                    "of concrete things actually present in the fetched content above — features, "
+                    "sections, buttons, headings, etc. Never invent details that aren't in the content.\n"
+                    "5. Keep it concise and factual, like a real browsing summary."
+                )
+            else:
+                # Direct fetch failed — fall back to a keyword search on the same text
+                err = page.get("error") if page else "unknown error"
+                results = web_search(user_msg)
+                if results:
+                    search_context = format_search_results(results, user_msg)
+                    sys_prompt += (
+                        f"\n\nDirect fetch of the URL failed ({err}), but here are web search results "
+                        f"instead:\n{search_context}\n\n"
+                        "Reply with a short **bold** intro line, then bullet points summarizing the "
+                        "findings with sources. Be honest that you searched about the link rather than "
+                        "opening it directly, since the direct fetch failed."
+                    )
+                else:
+                    sys_prompt += (
+                        f"\n\nThe user shared a URL but it couldn't be fetched ({err}), and a fallback "
+                        "search also returned nothing. In 1-2 lines, tell the user honestly that you "
+                        "weren't able to reach that specific link right now — don't pretend you saw it, "
+                        "and don't claim you're generally unable to browse the web (you can; this one "
+                        "attempt just failed)."
+                    )
+        else:
+            results = web_search(user_msg)
+            if results:
+                search_context = format_search_results(results, user_msg)
+                sys_prompt += (
+                    f"\n\nWEB SEARCH RESULTS for '{user_msg}':\n{search_context}\n\n"
+                    "Answer using these results. Match Claude AI's search style: a short **bold** intro "
+                    "line, then bullet points ('*') summarizing the findings, citing sources (site names) "
+                    "inline. Be concise and don't say you can't search the web — you just did."
+                )
 
     # NEW: Uploaded file context — only inline small files directly into the
     # system prompt. Large files are handled separately by review_large_file()

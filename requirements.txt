@@ -7,3 +7,5 @@ PyPDF2
 pandas
 pypdf
 reportlab
+duckduckgo-search
+beautifulsoup4
